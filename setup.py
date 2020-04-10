@@ -1,8 +1,13 @@
 from setuptools import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(name='PyQtExtendedScene',
-      version='0.1',
-      description='Little library for working with scene: drag, zoom, add\\remove elements, etc',
+      version='0.1.3',
+      description='Extended scene library',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       url='https://github.com/EPC-MSU/PyQtExtendedScene',
       author='EPC MSU',
       author_email='mihalin@physlab.ru',

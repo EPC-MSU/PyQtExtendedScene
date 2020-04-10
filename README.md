@@ -1,6 +1,18 @@
 # PyQtExtendedScene
 Little library for working with scene: drag, zoom, add\remove elements, etc
 
-Try it yourself:
+Repository: https://github.com/EPC-MSU/PyQtExtendedScene
 
-> python example.py
+## Installation:
+
+```bash
+pip install PyQtExtendedScene
+```
+
+## Working example:
+
+```bash
+git clone https://github.com/EPC-MSU/PyQtExtendedScene
+cd PyQtExtendedScene
+python example.py
+```
