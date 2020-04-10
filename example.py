@@ -1,4 +1,4 @@
-from ExtendedScene.scene import ExtendedScene, AbstractComponent
+from extendedscene import ExtendedScene, AbstractComponent
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QApplication
 from PyQt5.QtCore import QRectF, QPointF
 from PyQt5.QtGui import QPixmap, QBrush, QColor
