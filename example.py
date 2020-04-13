@@ -15,6 +15,7 @@ class MyComponent(AbstractComponent):
 
         self.setPos(QPointF(x, y))
 
+        # We must describe how to draw our own component
         # Our own component will be just a circle
         self._item = QGraphicsEllipseItem(-self._r, -self._r, self._r * 2, self._r * 2, self)
         # .. yellow circle
@@ -23,19 +24,16 @@ class MyComponent(AbstractComponent):
         # Add description to our object - it will be used in "click" callback function
         self._descr = descr
 
+    # We must override parent method "select" because our component changes shape when selected
     def select(self, selected: bool = True):
         # Radius of our circle changes when selected
         self._r = self.selected_size if selected else self.normal_size
         # redraw our object with new radius
         self._item.setRect(QRectF(-self._r, -self._r, self._r * 2, self._r * 2))
 
-    def boundingRect(self):
-        # Bounding rect of our object is a bounding rect of children item (e.g. circle)
-        return self.childrenBoundingRect()
-
     @property
+    # That is our own property
     def description(self):
-        # Our own field
         return self._descr
 
 
@@ -55,6 +53,7 @@ if __name__ == '__main__':
 
     image = QPixmap(path_to_image)
     image = image.scaled(800, 600)
+    # Create workspace!
     widget = ExtendedScene(image)
 
     # Let's add some components to our workspace

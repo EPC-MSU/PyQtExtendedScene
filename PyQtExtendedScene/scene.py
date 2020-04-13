@@ -45,6 +45,10 @@ class AbstractComponent(QGraphicsItem):
     def paint(self, painter, option, widget=None):
         pass
 
+    def boundingRect(self):
+        # By default bounding rect of our object is a bounding rect of children items
+        return self.childrenBoundingRect()
+
 
 class ExtendedScene(QGraphicsView):
     on_component_left_click = QtCore.pyqtSignal(AbstractComponent)
