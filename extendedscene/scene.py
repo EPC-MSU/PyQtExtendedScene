@@ -42,6 +42,9 @@ class AbstractComponent(QGraphicsItem):
     def unique_selection(self):
         return self._unique_selection
 
+    def paint(self, painter, option, widget=None):
+        pass
+
 
 class ExtendedScene(QGraphicsView):
     on_component_left_click = QtCore.pyqtSignal(AbstractComponent)

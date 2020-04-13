@@ -1,7 +1,7 @@
-from extendedscene import ExtendedScene, AbstractComponent
-from PyQt5.QtWidgets import QGraphicsEllipseItem, QApplication
+from PyQt5.QtWidgets import QGraphicsEllipseItem
 from PyQt5.QtCore import QRectF, QPointF
-from PyQt5.QtGui import QPixmap, QBrush, QColor
+from PyQt5.QtGui import QBrush, QColor
+from extendedscene import ExtendedScene, AbstractComponent
 
 
 class MyComponent(AbstractComponent):
@@ -32,9 +32,6 @@ class MyComponent(AbstractComponent):
     def boundingRect(self):
         return self.childrenBoundingRect()
 
-    def paint(self, painter, option, widget=None):
-        pass
-
     @property
     def description(self):
         return self._descr
@@ -42,10 +39,19 @@ class MyComponent(AbstractComponent):
 
 if __name__ == '__main__':
     import sys
+    from os.path import isfile
+    from PyQt5.QtWidgets import QFileDialog, QApplication
+    from PyQt5.QtGui import QPixmap
 
     app = QApplication(sys.argv)
 
-    image = QPixmap("workspace.png")
+    path_to_image = "workspace.png"
+    if not isfile(path_to_image):
+        path_to_image = QFileDialog().getOpenFileName(caption="Open workspace image",
+                                                      filter="Image Files (*.png *.jpg *.bmp *.tiff)")[0]
+
+    image = QPixmap(path_to_image)
+    image = image.scaled(800, 600)
     widget = ExtendedScene(image)
 
     widget.add_component(MyComponent(10, 10, "My component 1"))
