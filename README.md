@@ -1,7 +1,5 @@
 # PyQtExtendedScene
 
-PyQtExtendedScene is library 
-
 PyQtExtendedScene is a little library for creating workspaces.
 Having described the method of drawing your components, with this library you get (draggable) workspace (scene) where the 
 components you described can be selected, moved, deleted, etc. 
@@ -98,3 +96,6 @@ if __name__ == '__main__':
     sys.exit(app.exec_())
 
 ```
+Workspace example:
+
+![Workspace example](https://i.imgur.com/DWi0tkN.gif)

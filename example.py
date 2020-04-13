@@ -60,11 +60,9 @@ if __name__ == '__main__':
     widget.add_component(MyComponent(10, 10, "My component 1"))
     widget.add_component(MyComponent(100, 200, "My component 2"))
 
-
     def left_click(component):
         if isinstance(component, MyComponent):
             print(f"Left click on '{component.description}'")
-
 
     # Handle left click
     widget.on_component_left_click.connect(left_click)
