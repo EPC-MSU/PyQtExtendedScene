@@ -61,7 +61,7 @@ class ExtendedScene(QGraphicsView):
         drag = auto(),
         drag_component = auto()
 
-    def __init__(self, image: QPixmap, zoom_speed: float = 0.001, parent=None) -> None:
+    def __init__(self, background: Optional[QPixmap] = None, zoom_speed: float = 0.001, parent=None) -> None:
         super().__init__(parent)
 
         self._zoom_speed = zoom_speed
@@ -73,7 +73,9 @@ class ExtendedScene(QGraphicsView):
         self._scale: float = 1.0
 
         scene = QGraphicsScene()
-        scene.addPixmap(image)
+        self._background = None
+        if background:
+            self._background = scene.addPixmap(background)
         self._scene: QGraphicsScene = scene
         self.setScene(self._scene)
 
@@ -91,6 +93,11 @@ class ExtendedScene(QGraphicsView):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self._components: List[AbstractComponent] = []
+
+    def set_background(self, background: QPixmap):
+        if self._background:
+            self._scene.removeItem(self._background)
+        self._background = self._scene.addPixmap(background)
 
     def add_component(self, component: AbstractComponent):
         self._components.append(component)
