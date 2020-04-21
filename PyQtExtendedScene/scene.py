@@ -129,7 +129,7 @@ class ExtendedScene(QGraphicsView):
     def wheelEvent(self, event):
         zoom_factor = 1.0
         zoom_factor += event.angleDelta().y() * self._zoom_speed
-        if self._scale < 0.2 and zoom_factor < 1.0:  # minimum allowed zoom
+        if self._scale * zoom_factor < 0.1 and zoom_factor < 1.0:  # minimum allowed zoom
             return
         self.zoom(zoom_factor, event.pos())
 
