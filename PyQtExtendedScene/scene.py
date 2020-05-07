@@ -202,7 +202,3 @@ class ExtendedScene(QGraphicsView):
         """
         return list(filter(lambda x: isinstance(x, class_filter), self._components))
 
-    def remove_all_components(self):
-        for component in self._components:
-            self._scene.removeItem(component)
-        self._components = []
