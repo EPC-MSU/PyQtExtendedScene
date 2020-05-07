@@ -201,4 +201,3 @@ class ExtendedScene(QGraphicsView):
         :return:
         """
         return list(filter(lambda x: isinstance(x, class_filter), self._components))
-
