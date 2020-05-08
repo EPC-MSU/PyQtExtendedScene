@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtCore import Qt, QPointF, QPoint
 from PyQt5.QtGui import QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import QGraphicsView, QFrame, QGraphicsScene, QGraphicsItem
 from typing import Optional, List

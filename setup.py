@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='PyQtExtendedScene',
-      version='1.0.7',
+      version='1.0.8',
       description='Extended scene library',
       long_description=long_description,
       long_description_content_type="text/markdown",
