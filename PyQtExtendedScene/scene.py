@@ -56,6 +56,8 @@ class ExtendedScene(QGraphicsView):
     on_right_click = QtCore.pyqtSignal(QPointF)
     on_middle_click = QtCore.pyqtSignal()
 
+    minimum_scale = 0.1
+
     class DragState(Enum):
         no_drag = auto(),
         drag = auto(),
@@ -129,7 +131,7 @@ class ExtendedScene(QGraphicsView):
     def wheelEvent(self, event):
         zoom_factor = 1.0
         zoom_factor += event.angleDelta().y() * self._zoom_speed
-        if self._scale * zoom_factor < 0.1 and zoom_factor < 1.0:  # minimum allowed zoom
+        if self._scale * zoom_factor < self.minimum_scale and zoom_factor < 1.0:  # minimum allowed zoom
             return
         self.zoom(zoom_factor, event.pos())
 
@@ -201,3 +203,18 @@ class ExtendedScene(QGraphicsView):
         :return:
         """
         return list(filter(lambda x: isinstance(x, class_filter), self._components))
+
+    def scale_to_window_size(self, x: float, y: float):
+        """
+        Scale to window size
+        For example, if you have window 600x600 and workspace background image 1200x1200,
+        image will be scaled in 4x
+        :param x: window width
+        :param y: window height
+        :return:
+        """
+        factor_x = x / self._background.pixmap().width()
+        factor_y = y / self._background.pixmap().height()
+        factor = max(min(factor_x, factor_y), self.minimum_scale)
+        self.zoom(factor, QPoint(0, 0))
+        self._scale *= factor
