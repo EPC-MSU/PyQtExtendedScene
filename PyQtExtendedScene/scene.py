@@ -53,6 +53,7 @@ class AbstractComponent(QGraphicsItem):
 class ExtendedScene(QGraphicsView):
     on_component_left_click = QtCore.pyqtSignal(AbstractComponent)
     on_component_right_click = QtCore.pyqtSignal(AbstractComponent)
+    on_component_moved = QtCore.pyqtSignal(AbstractComponent)
     on_right_click = QtCore.pyqtSignal(QPointF)
     on_middle_click = QtCore.pyqtSignal()
 
@@ -194,6 +195,11 @@ class ExtendedScene(QGraphicsView):
     def mouseReleaseEvent(self, event):
         if event.button() & Qt.LeftButton:
             self.setDragMode(QGraphicsView.NoDrag)
+
+            if self._drag_state is self.DragState.drag_component:
+                if self._current_component:
+                    self.on_component_moved.emit(self._current_component)
+
             self._drag_state = self.DragState.no_drag
 
     def all_components(self, class_filter: type = object) -> List[AbstractComponent]:
