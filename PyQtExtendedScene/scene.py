@@ -97,6 +97,14 @@ class ExtendedScene(QGraphicsView):
 
         self._components: List[AbstractComponent] = []
 
+        self._drag_allowed = True
+
+    def allow_drag(self, allow: bool = True):
+        self._drag_allowed = allow
+
+    def is_drag_allowed(self) -> bool:
+        return self._drag_allowed
+
     def set_background(self, background: QPixmap):
         if self._background:
             self._scene.removeItem(self._background)
@@ -166,7 +174,7 @@ class ExtendedScene(QGraphicsView):
                         self.remove_all_selections()
                     item.select(True)
 
-                if item.draggable:
+                if item.draggable and self._drag_allowed:
                     self._drag_state = self.DragState.drag_component
                     self._current_component = item
                 return
