@@ -99,6 +99,12 @@ class ExtendedScene(QGraphicsView):
 
         self._drag_allowed = True
 
+    def clear_scene(self):
+        self._scene.clear()
+        self._components = []
+        self._background = None
+        self.resetTransform()
+
     def allow_drag(self, allow: bool = True):
         self._drag_allowed = allow
 
@@ -107,7 +113,7 @@ class ExtendedScene(QGraphicsView):
 
     def set_background(self, background: QPixmap):
         if self._background:
-            self._scene.removeItem(self._background)
+            raise ValueError("Call 'clear_scene' first!")
         self._background = self._scene.addPixmap(background)
 
     def add_component(self, component: AbstractComponent):
@@ -230,5 +236,6 @@ class ExtendedScene(QGraphicsView):
         factor_x = x / self._background.pixmap().width()
         factor_y = y / self._background.pixmap().height()
         factor = max(min(factor_x, factor_y), self.minimum_scale)
+        self.resetTransform()
+        self._scale = factor
         self.zoom(factor, QPoint(0, 0))
-        self._scale *= factor
