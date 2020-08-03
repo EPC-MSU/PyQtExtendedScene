@@ -216,6 +216,9 @@ class ExtendedScene(QGraphicsView):
 
             self._drag_state = self.DragState.no_drag
 
+    def resizeEvent(self, event):
+        pass
+
     def all_components(self, class_filter: type = object) -> List[AbstractComponent]:
         """
         Get all components with class class_filter (all components by default)
