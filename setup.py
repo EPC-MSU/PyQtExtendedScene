@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='PyQtExtendedScene',
-      version='1.0.11',
+      version='1.0.12',
       description='Extended scene library',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -14,7 +14,7 @@ setup(name='PyQtExtendedScene',
       license='MIT',
       packages=['PyQtExtendedScene'],
       install_requires=[
-            'PyQt5>=5.8.2, <=5.14.0',
+            'PyQt5>=5.8.2, <=5.15.0',
       ],
       classifiers=[
             "Programming Language :: Python :: 3",
