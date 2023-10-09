@@ -25,3 +25,7 @@ exclude =
 # ======================
 # Add comments for all ignored rules to justify the common standard violation
 # extend-ignore =
+    # doxygen comments are used in python files
+    # E266,
+    # @overload is used
+    # F811,
