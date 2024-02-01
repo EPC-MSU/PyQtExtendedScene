@@ -1,9 +1,8 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QPointF, QPoint
-from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QResizeEvent, QWheelEvent
-from PyQt5.QtWidgets import QGraphicsView, QFrame, QGraphicsScene, QGraphicsItem
-from typing import Optional, List
-from enum import Enum, auto
+from enum import auto, Enum
+from typing import List, Optional
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt
+from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPixmap, QResizeEvent, QWheelEvent
+from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsScene, QGraphicsView, QWidget
 
 
 class AbstractComponent(QGraphicsItem):
@@ -23,12 +22,6 @@ class AbstractComponent(QGraphicsItem):
         self._selectable: bool = selectable
         self._unique_selection: bool = unique_selection
 
-    def select(self, selected: bool = True):
-        pass
-
-    def update_scale(self, scale: float):
-        pass
-
     @property
     def draggable(self) -> bool:
         return self._draggable
@@ -41,21 +34,27 @@ class AbstractComponent(QGraphicsItem):
     def unique_selection(self) -> bool:
         return self._unique_selection
 
-    def paint(self, painter, option, widget=None):
-        pass
-
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         # By default bounding rect of our object is a bounding rect of children items
         return self.childrenBoundingRect()
+
+    def paint(self, painter: QPainter, option, widget: QWidget = None) -> None:
+        pass
+
+    def select(self, selected: bool = True):
+        pass
+
+    def update_scale(self, scale: float):
+        pass
 
 
 class ExtendedScene(QGraphicsView):
 
-    on_component_left_click = QtCore.pyqtSignal(AbstractComponent)
-    on_component_right_click = QtCore.pyqtSignal(AbstractComponent)
-    on_component_moved = QtCore.pyqtSignal(AbstractComponent)
-    on_right_click = QtCore.pyqtSignal(QPointF)
-    on_middle_click = QtCore.pyqtSignal()
+    on_component_left_click = pyqtSignal(AbstractComponent)
+    on_component_right_click = pyqtSignal(AbstractComponent)
+    on_component_moved = pyqtSignal(AbstractComponent)
+    on_right_click = pyqtSignal(QPointF)
+    on_middle_click = pyqtSignal()
 
     minimum_scale = 0.1
 
@@ -79,8 +78,8 @@ class ExtendedScene(QGraphicsView):
 
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QBrush(QColor(0, 0, 0)))
         self.setFrameShape(QFrame.NoFrame)
 
@@ -112,9 +111,21 @@ class ExtendedScene(QGraphicsView):
         self._background = self._scene.addPixmap(background)
 
     def add_component(self, component: AbstractComponent) -> None:
+        """
+        :param component: component to be added to the scene.
+        """
+
         self._components.append(component)
         self._scene.addItem(component)
         component.update_scale(self._scale)
+
+    def remove_component(self, component: AbstractComponent) -> None:
+        """
+        :param component: component to be removed from the scene.
+        """
+
+        self._components.remove(component)
+        self._scene.removeItem(component)
 
     def zoom(self, zoom_factor, pos) -> None:  # pos in view coordinates
         old_scene_pos = self.mapToScene(pos)
@@ -150,13 +161,13 @@ class ExtendedScene(QGraphicsView):
         for component in self._components:
             component.update_scale(self._scale)
 
-    def _clicked_item(self, event) -> Optional[AbstractComponent]:
+    def _clicked_item(self, event: QMouseEvent) -> Optional[AbstractComponent]:
         for item in self.items(event.pos()):
             if isinstance(item, AbstractComponent):
                 return item
         return None
 
-    def remove_all_selections(self):
+    def remove_all_selections(self) -> None:
         for item in self._components:
             item.select(False)
 
@@ -216,9 +227,8 @@ class ExtendedScene(QGraphicsView):
 
     def all_components(self, class_filter: type = object) -> List[AbstractComponent]:
         """
-        Get all components with class class_filter (all components by default).
-        :param class_filter:
-        :return:
+        :param class_filter: filter for components on scene.
+        :return: list of components that match a given filter.
         """
 
         return list(filter(lambda x: isinstance(x, class_filter), self._components))
