@@ -1,3 +1,4 @@
-from .scene import ExtendedScene, AbstractComponent
+from .scene import AbstractComponent, ExtendedScene
 
-__all__ = ["ExtendedScene", "AbstractComponent"]
+
+__all__ = ["AbstractComponent", "ExtendedScene"]
