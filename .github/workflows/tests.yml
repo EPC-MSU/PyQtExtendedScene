@@ -22,6 +22,6 @@ jobs:
       - name: Run tests
         run: |
           export QT_QPA_PLATFORM=offscreen
-          python -m unittest discover tests
+          python -m unittest discover tests -v
       - name: Checking package installation
         run: python setup.py install
