@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 setup(name="PyQtExtendedScene",
-      version="1.0.13",
+      version="1.0.14",
       description="Extended scene library",
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -22,5 +22,5 @@ setup(name="PyQtExtendedScene",
             "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
       ],
-      python_requires=">=3.6",
+      python_requires=">=3.6, <=3.8.10",
       zip_safe=False)
