@@ -66,9 +66,7 @@ class ScalableComponent(AbstractComponent):
         :param scale: new scale.
         """
 
-        pen = QPen(self._item.pen())
-        pen.setWidthF(self._pen.widthF() * scale)
-        self._item.setPen(pen)
+        pass
 
     def update_selection(self) -> None:
         if self._selected:

@@ -1,8 +1,8 @@
 from enum import auto, Enum
 from typing import List, Optional
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRect, QSize, Qt, QTimer
-from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QResizeEvent, QWheelEvent
-from PyQt5.QtWidgets import QFrame, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QRubberBand
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, Qt, QTimer
+from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QWheelEvent
+from PyQt5.QtWidgets import QFrame, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QRubberBand
 from .abstractcomponent import AbstractComponent
 from .scalablecomponent import ScalableComponent
 
@@ -19,6 +19,7 @@ class ExtendedScene(QGraphicsView):
     scale_changed: pyqtSignal = pyqtSignal(float)
 
     class State(Enum):
+        CREATE = auto()
         DRAG = auto()
         DRAG_COMPONENT = auto()
         NO = auto()
@@ -36,14 +37,17 @@ class ExtendedScene(QGraphicsView):
         self._zoom_speed: float = zoom_speed
 
         self._components: List[AbstractComponent] = []
+        self._components_union: QGraphicsItemGroup = QGraphicsItemGroup()
         self._current_component: Optional[AbstractComponent] = None
         self._drag_allowed: bool = True
+        self._new_component: Optional[ScalableComponent] = None
         self._rubber_band: QRubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self._rubber_band.hide()
         self._start_pos: Optional[QPointF] = None
         self._state: ExtendedScene.State = ExtendedScene.State.NO
 
         self._scene: QGraphicsScene = QGraphicsScene()
+        self._scene.addItem(self._components_union)
         self._background: Optional[QGraphicsPixmapItem] = self._scene.addPixmap(background) if background else None
         self.setScene(self._scene)
 
@@ -109,19 +113,10 @@ class ExtendedScene(QGraphicsView):
         self._rubber_band.show()
         self._state = ExtendedScene.State.SELECT
 
-    def _handle_mouse_middle_button_release(self, event: QMouseEvent) -> None:
-        """
-        :param event: mouse event.
-        """
-
+    def _handle_mouse_middle_button_release(self) -> None:
         self._select_components(self._rubber_band.geometry())
         self._rubber_band.hide()
         self._state = ExtendedScene.State.NO
-
-    def _select_components(self, rect: QRect) -> None:
-        for item in self.items(rect):
-            if isinstance(item, AbstractComponent):
-                item.select(True)
 
     def _handle_mouse_right_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
         """
@@ -133,7 +128,23 @@ class ExtendedScene(QGraphicsView):
             self.on_component_right_click.emit(item)
             return
 
-        self.on_right_click.emit(self.mapToScene(event.pos()))
+        self._start_pos = self.mapToScene(event.pos())
+        self.on_right_click.emit(self._start_pos)
+
+        self._new_component = ScalableComponent()
+        self._new_component.set_rect(QRectF(self._start_pos, QSizeF()))
+        self.add_component(self._new_component)
+        self._state = ExtendedScene.State.CREATE
+
+    def _handle_mouse_right_button_release(self) -> None:
+        self._new_component = None
+        self._state = ExtendedScene.State.NO
+
+    def _select_components(self, rect: QRect) -> None:
+        for item in self.items(rect):
+            if isinstance(item, AbstractComponent):
+                item.select(True)
+                self._components_union.addToGroup(item)
 
     def add_component(self, component: AbstractComponent) -> None:
         """
@@ -180,7 +191,9 @@ class ExtendedScene(QGraphicsView):
         :param event: mouse event.
         """
 
-        if self._state == ExtendedScene.State.DRAG:
+        if self._state == ExtendedScene.State.CREATE:
+            self._new_component.set_rect(QRectF(self._start_pos, self.mapToScene(event.pos())))
+        elif self._state == ExtendedScene.State.DRAG:
             delta = self.mapToScene(event.pos()) - self._start_pos
             self.move(delta)
         elif self._state == ExtendedScene.State.DRAG_COMPONENT:
@@ -220,7 +233,10 @@ class ExtendedScene(QGraphicsView):
             self._state = ExtendedScene.State.NO
 
         if event.button() & Qt.MiddleButton:
-            self._handle_mouse_middle_button_release(event)
+            self._handle_mouse_middle_button_release()
+
+        if event.button() & Qt.RightButton:
+            self._handle_mouse_right_button_release()
 
     def move(self, delta: QPoint) -> None:
         """
@@ -249,9 +265,6 @@ class ExtendedScene(QGraphicsView):
         self.scale_changed.disconnect(component.update_scale)
         if isinstance(component, ScalableComponent):
             self._timer.timeout.disconnect(component.update_selection)
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        pass
 
     def scale_to_window_size(self, x: float, y: float) -> None:
         """
