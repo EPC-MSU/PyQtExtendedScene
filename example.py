@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
-from PyQtExtendedScene import AbstractComponent, ExtendedScene
+from PyQtExtendedScene import AbstractComponent, ExtendedScene, ScalableComponent
 
 
 # Let's describe our own component
@@ -70,6 +70,9 @@ if __name__ == "__main__":
     # Let's add some components to our workspace
     widget.add_component(MyComponent(10, 10, "My component 1"))
     widget.add_component(MyComponent(100, 200, "My component 2"))
+
+    scalable_component = ScalableComponent(QRectF(50, 60, 300, 200))
+    widget.add_component(scalable_component)
 
     # Handle left click
     widget.on_component_left_click.connect(left_click)

@@ -50,7 +50,7 @@ class AbstractComponent(QGraphicsItem):
         :return: the outer bounds of the component as a rectangle.
         """
 
-        # By default bounding rect of our object is a bounding rect of children items
+        # By default, bounding rect of our object is a bounding rect of children items
         return self.childrenBoundingRect()
 
     def paint(self, painter: QPainter, option, widget: QWidget = None) -> None:
