@@ -8,12 +8,16 @@ from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHov
 
 
 class Mode(Enum):
-    MOVE_BOTTOM = auto()
-    MOVE_LEFT = auto()
-    MOVE_RIGHT = auto()
-    MOVE_TOP = auto()
+    MOVE = auto()
     NO = auto()
-    RESIZE = auto()
+    RESIZE_BOTTOM = auto()
+    RESIZE_LEFT = auto()
+    RESIZE_LEFT_BOTTOM = auto()
+    RESIZE_LEFT_TOP = auto()
+    RESIZE_RIGHT = auto()
+    RESIZE_RIGHT_BOTTOM = auto()
+    RESIZE_RIGHT_TOP = auto()
+    RESIZE_TOP = auto()
 
 
 class ScalableComponent(QGraphicsRectItem):
@@ -21,15 +25,23 @@ class ScalableComponent(QGraphicsRectItem):
     Rectangular component that can be drawn with the mouse and resized.
     """
 
-    CURSORS = {Mode.MOVE_BOTTOM: Qt.SizeVerCursor,
-               Mode.MOVE_LEFT: Qt.SizeHorCursor,
-               Mode.MOVE_RIGHT: Qt.SizeHorCursor,
-               Mode.MOVE_TOP: Qt.SizeVerCursor,
-               Mode.NO: Qt.ArrowCursor}
+    CURSORS = {Mode.MOVE: Qt.SizeAllCursor,
+               Mode.NO: Qt.ArrowCursor,
+               Mode.RESIZE_BOTTOM: Qt.SizeVerCursor,
+               Mode.RESIZE_LEFT: Qt.SizeHorCursor,
+               Mode.RESIZE_LEFT_BOTTOM: Qt.SizeBDiagCursor,
+               Mode.RESIZE_LEFT_TOP: Qt.SizeFDiagCursor,
+               Mode.RESIZE_RIGHT: Qt.SizeHorCursor,
+               Mode.RESIZE_RIGHT_BOTTOM: Qt.SizeFDiagCursor,
+               Mode.RESIZE_RIGHT_TOP: Qt.SizeBDiagCursor,
+               Mode.RESIZE_TOP: Qt.SizeVerCursor}
+    DIAG_PORTION: float = 0.05
+    PEN_COLOR: str = "#0047AB"
+    PEN_WIDTH: float = 2
 
     def __init__(self, rect: Optional[QRectF] = None, pen_color: Optional[QColor] = None,
                  pen_width: Optional[float] = None, draggable: bool = True, selectable: bool = True,
-                 unique_selection: bool = True) -> None:
+                 unique_selection: bool = False) -> None:
         """
         :param rect:
         :param pen_color:
@@ -63,6 +75,10 @@ class ScalableComponent(QGraphicsRectItem):
         return self._draggable
 
     @property
+    def mode(self) -> Mode:
+        return self._mode
+
+    @property
     def selectable(self) -> bool:
         """
         :return: True if component can be selected.
@@ -78,6 +94,18 @@ class ScalableComponent(QGraphicsRectItem):
 
         return self._unique_selection
 
+    @staticmethod
+    def _create_solid_pen(color: QColor, width: float) -> QPen:
+        """
+        :param color: pen color;
+        :param width: pen width.
+        :return: solid pen.
+        """
+
+        color = color or ScalableComponent.PEN_COLOR
+        width = width or ScalableComponent.PEN_WIDTH
+        return QPen(QBrush(QColor(color)), width)
+
     def _get_mode(self, pos: QPointF) -> Mode:
         """
         :param pos:
@@ -87,22 +115,53 @@ class ScalableComponent(QGraphicsRectItem):
         x, y = pos.x(), pos.y()
         pen_width = self.pen().width()
         left = self.rect().x()
-        right = left + self.rect().width()
+        width = self.rect().width()
+        right = left + width
         top = self.rect().y()
-        bottom = top + self.rect().height()
-        if top <= y <= bottom:
+        height = self.rect().height()
+        bottom = top + height
+
+        if top <= y <= top + ScalableComponent.DIAG_PORTION * height:
             if left - pen_width <= x <= left + pen_width / 2:
-                return Mode.MOVE_LEFT
+                return Mode.RESIZE_LEFT_TOP
 
             if right - pen_width / 2 <= x <= right + pen_width:
-                return Mode.MOVE_RIGHT
+                return Mode.RESIZE_RIGHT_TOP
 
-        if left <= x <= right:
+        if top + ScalableComponent.DIAG_PORTION * height < y < bottom - ScalableComponent.DIAG_PORTION * height:
+            if left - pen_width <= x <= left + pen_width / 2:
+                return Mode.RESIZE_LEFT
+
+            if right - pen_width / 2 <= x <= right + pen_width:
+                return Mode.RESIZE_RIGHT
+
+        if bottom - ScalableComponent.DIAG_PORTION * height <= y <= bottom:
+            if left - pen_width <= x <= left + pen_width / 2:
+                return Mode.RESIZE_LEFT_BOTTOM
+
+            if right - pen_width / 2 <= x <= right + pen_width:
+                return Mode.RESIZE_RIGHT_BOTTOM
+
+        if left <= x <= left + ScalableComponent.DIAG_PORTION * width:
             if top - pen_width <= y <= top + pen_width / 2:
-                return Mode.MOVE_TOP
+                return Mode.RESIZE_LEFT_TOP
 
             if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return Mode.MOVE_BOTTOM
+                return Mode.RESIZE_LEFT_BOTTOM
+
+        if left + ScalableComponent.DIAG_PORTION * width < x < right - ScalableComponent.DIAG_PORTION * width:
+            if top - pen_width <= y <= top + pen_width / 2:
+                return Mode.RESIZE_TOP
+
+            if bottom - pen_width / 2 <= y <= bottom + pen_width:
+                return Mode.RESIZE_BOTTOM
+
+        if right - ScalableComponent.DIAG_PORTION * width <= x <= right:
+            if top - pen_width <= y <= top + pen_width / 2:
+                return Mode.RESIZE_RIGHT_TOP
+
+            if bottom - pen_width / 2 <= y <= bottom + pen_width:
+                return Mode.RESIZE_RIGHT_BOTTOM
 
         return Mode.NO
 
@@ -138,7 +197,7 @@ class ScalableComponent(QGraphicsRectItem):
         :param width: pen width.
         """
 
-        self._solid_pen = create_solid_pen(color, width)
+        self._solid_pen = self._create_solid_pen(color, width)
         super().setPen(QPen(self._solid_pen))
 
     @staticmethod
@@ -154,18 +213,6 @@ class ScalableComponent(QGraphicsRectItem):
             super().setPen(get_dashed_pen(self._solid_pen))
         elif self.pen() != self._solid_pen:
             super().setPen(QPen(self._solid_pen))
-
-
-def create_solid_pen(color: QColor, width: float) -> QPen:
-    """
-    :param color: pen color;
-    :param width: pen width.
-    :return: solid pen.
-    """
-
-    color = color or "red"
-    width = width or 1
-    return QPen(QBrush(QColor(color)), width)
 
 
 def get_dashed_pen(solid_pen: QPen) -> QPen:
