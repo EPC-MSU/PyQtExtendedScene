@@ -2,7 +2,8 @@ from enum import auto, Enum
 from typing import List, Optional
 from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QWheelEvent
-from PyQt5.QtWidgets import QFrame, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QRubberBand
+from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsScene,
+                             QGraphicsView, QRubberBand)
 from .abstractcomponent import AbstractComponent
 from .scalablecomponent import ScalableComponent
 
@@ -11,9 +12,9 @@ class ExtendedScene(QGraphicsView):
 
     MINIMUM_SCALE: int = 0.1
     UPDATE_INTERVAL: int = 400
-    on_component_left_click: pyqtSignal = pyqtSignal(AbstractComponent)
-    on_component_right_click: pyqtSignal = pyqtSignal(AbstractComponent)
-    on_component_moved: pyqtSignal = pyqtSignal(AbstractComponent)
+    on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
+    on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
+    on_component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_middle_click: pyqtSignal = pyqtSignal()
     on_right_click: pyqtSignal = pyqtSignal(QPointF)
     scale_changed: pyqtSignal = pyqtSignal(float)
@@ -36,9 +37,9 @@ class ExtendedScene(QGraphicsView):
         self._scale: float = 1.0
         self._zoom_speed: float = zoom_speed
 
-        self._components: List[AbstractComponent] = []
+        self._components: List[ScalableComponent] = []
         self._components_union: QGraphicsItemGroup = QGraphicsItemGroup()
-        self._current_component: Optional[AbstractComponent] = None
+        self._current_component: Optional[ScalableComponent] = None
         self._drag_allowed: bool = True
         self._new_component: Optional[ScalableComponent] = None
         self._rubber_band: QRubberBand = QRubberBand(QRubberBand.Rectangle, self)
@@ -48,8 +49,8 @@ class ExtendedScene(QGraphicsView):
 
         self._scene: QGraphicsScene = QGraphicsScene()
         self._scene.addItem(self._components_union)
-        self._background: Optional[QGraphicsPixmapItem] = self._scene.addPixmap(background) if background else None
         self.setScene(self._scene)
+        self._background: Optional[QGraphicsPixmapItem] = self._scene.addPixmap(background) if background else None
 
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
@@ -65,57 +66,52 @@ class ExtendedScene(QGraphicsView):
         self._timer: QTimer = QTimer()
         self._timer.start(ExtendedScene.UPDATE_INTERVAL)
 
-    def _get_clicked_item(self, event: QMouseEvent) -> Optional[AbstractComponent]:
+    def _get_clicked_item(self, event: QMouseEvent) -> Optional[ScalableComponent]:
         """
         :param event: mouse event.
         :return: a component that is located at the point specified by the mouse.
         """
 
         for item in self.items(event.pos()):
-            if isinstance(item, AbstractComponent):
+            if isinstance(item, ScalableComponent):
                 return item
 
         return None
 
-    def _handle_mouse_left_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
+    def _handle_mouse_left_button_press(self, item: Optional[ScalableComponent]) -> None:
         """
-        :param event: mouse event;
         :param item: component clicked by mouse.
         """
 
-        self._start_pos = self.mapToScene(event.pos())
-
         if item:
             self.on_component_left_click.emit(item)
-
             if item.selectable:
-                if item.unique_selection:
+                if not item.isSelected() and item.unique_selection:
                     self.remove_all_selections()
-                item.select(True)
-
-            if item.draggable and self._drag_allowed:
-                self._state = ExtendedScene.State.DRAG_COMPONENT
-                self._current_component = item
+            self._state = ExtendedScene.State.DRAG_COMPONENT
             return
 
         # We are in drag board mode now
-        self._state = ExtendedScene.State.DRAG
+        self.remove_all_selections()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self._state = ExtendedScene.State.DRAG
 
-    def _handle_mouse_middle_button_press(self, event: QMouseEvent) -> None:
-        """
-        :param event: mouse event.
-        """
+    def _handle_mouse_left_button_release(self) -> None:
+        self.setDragMode(QGraphicsView.NoDrag)
 
+        if self._state == ExtendedScene.State.DRAG_COMPONENT:
+            if self._current_component:
+                self.on_component_moved.emit(self._current_component)
+
+        self._state = ExtendedScene.State.NO
+
+    def _handle_mouse_middle_button_press(self) -> None:
         self.on_middle_click.emit()
-        self._start_pos = event.pos()
-        self._rubber_band.setGeometry(QRect(self._start_pos, QSize()))
-        self._rubber_band.show()
+        self.setDragMode(QGraphicsView.RubberBandDrag)
         self._state = ExtendedScene.State.SELECT
 
     def _handle_mouse_middle_button_release(self) -> None:
-        self._select_components(self._rubber_band.geometry())
-        self._rubber_band.hide()
+        self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO
 
     def _handle_mouse_right_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
@@ -132,7 +128,7 @@ class ExtendedScene(QGraphicsView):
         self.on_right_click.emit(self._start_pos)
 
         self._new_component = ScalableComponent()
-        self._new_component.set_rect(QRectF(self._start_pos, QSizeF()))
+        self._new_component.setRect(QRectF(self._start_pos, QSizeF()))
         self.add_component(self._new_component)
         self._state = ExtendedScene.State.CREATE
 
@@ -141,12 +137,17 @@ class ExtendedScene(QGraphicsView):
         self._state = ExtendedScene.State.NO
 
     def _select_components(self, rect: QRect) -> None:
+        """
+        :param rect: rectangle in which to select components.
+        """
+
         for item in self.items(rect):
-            if isinstance(item, AbstractComponent):
+            if isinstance(item, ScalableComponent):
                 item.select(True)
+                self._scene.removeItem(item)
                 self._components_union.addToGroup(item)
 
-    def add_component(self, component: AbstractComponent) -> None:
+    def add_component(self, component: ScalableComponent) -> None:
         """
         :param component: component to be added to the scene.
         """
@@ -192,70 +193,41 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._state == ExtendedScene.State.CREATE:
-            self._new_component.set_rect(QRectF(self._start_pos, self.mapToScene(event.pos())))
-        elif self._state == ExtendedScene.State.DRAG:
-            delta = self.mapToScene(event.pos()) - self._start_pos
-            self.move(delta)
-        elif self._state == ExtendedScene.State.DRAG_COMPONENT:
-            self._current_component.setPos(self.mapToScene(event.pos()))
-        elif self._state == ExtendedScene.State.SELECT:
-            self._rubber_band.setGeometry(QRect(self._start_pos, event.pos()).normalized())
+            self._new_component.setRect(QRectF(self._start_pos, self.mapToScene(event.pos())))
+        super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         :param event: mouse event.
         """
 
-        # Check for clicked pin
         item = self._get_clicked_item(event)
-
-        if event.button() & Qt.LeftButton:
-            self._handle_mouse_left_button_press(event, item)
-
-        if event.button() & Qt.MiddleButton:
-            self._handle_mouse_middle_button_press(event)
-
-        if event.button() & Qt.RightButton:
+        if event.button() == Qt.LeftButton:
+            self._handle_mouse_left_button_press(item)
+        elif event.button() == Qt.MiddleButton:
+            self._handle_mouse_middle_button_press()
+        elif event.button() == Qt.RightButton:
             self._handle_mouse_right_button_press(event, item)
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """
         :param event: mouse event.
         """
 
-        if event.button() & Qt.LeftButton:
-            self.setDragMode(QGraphicsView.NoDrag)
-
-            if self._state == ExtendedScene.State.DRAG_COMPONENT:
-                if self._current_component:
-                    self.on_component_moved.emit(self._current_component)
-
-            self._state = ExtendedScene.State.NO
-
-        if event.button() & Qt.MiddleButton:
+        if event.button() == Qt.LeftButton:
+            self._handle_mouse_left_button_release()
+        elif event.button() == Qt.MiddleButton:
             self._handle_mouse_middle_button_release()
-
-        if event.button() & Qt.RightButton:
+        elif event.button() == Qt.RightButton:
             self._handle_mouse_right_button_release()
-
-    def move(self, delta: QPoint) -> None:
-        """
-        :param delta: offset to which the scene should be moved.
-        """
-
-        # Note: Workaround! See:
-        # - https://bugreports.qt.io/browse/QTBUG-7328
-        # - https://stackoverflow.com/questions/14610568/how-to-use-the-qgraphicsviews-translate-function
-        anchor = self.transformationAnchor()
-        self.setTransformationAnchor(QGraphicsView.NoAnchor)  # Override transformation anchor
-        self.translate(delta.x(), delta.y())
-        self.setTransformationAnchor(anchor)  # Restore old anchor
+        super().mouseReleaseEvent(event)
 
     def remove_all_selections(self) -> None:
         for item in self._components:
             item.select(False)
 
-    def remove_component(self, component: AbstractComponent) -> None:
+    def remove_component(self, component: ScalableComponent) -> None:
         """
         :param component: component to be removed from the scene.
         """

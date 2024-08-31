@@ -2,11 +2,13 @@ import time
 from typing import Optional
 from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPen
-from PyQt5.QtWidgets import QGraphicsRectItem
-from .abstractcomponent import AbstractComponent
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem, QStyle
 
 
-class ScalableComponent(AbstractComponent):
+class ScalableComponent(QGraphicsRectItem):
+    """
+    Rectangular component that can be drawn with the mouse and resized.
+    """
 
     def __init__(self, rect: Optional[QRectF] = None, pen_color: Optional[QColor] = None,
                  pen_width: Optional[float] = None, draggable: bool = True, selectable: bool = True,
@@ -21,53 +23,100 @@ class ScalableComponent(AbstractComponent):
         ('selectable' must be set).
         """
 
-        super().__init__(draggable, selectable, unique_selection)
-        self._item: QGraphicsRectItem = QGraphicsRectItem(self)
-        self._pen: QPen = QPen()
-        self.set_pen(pen_color, pen_width)
-        self._selected: bool = False
+        super().__init__()
+        self._draggable: bool = draggable
+        self._selectable: bool = selectable
+        self._solid_pen: QPen = QPen()
+        self._unique_selection: bool = unique_selection
 
+        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.setPen(pen_color, pen_width)
         if rect:
-            self.set_rect(rect)
+            self.setRect(rect)
 
-    @staticmethod
-    def _create_pen(color: QColor, width: float) -> QPen:
-        color = color or "red"
-        width = width or 1
-        return QPen(QBrush(QColor(color)), width)
+    @property
+    def draggable(self) -> bool:
+        """
+        :return: True if component can be dragged.
+        """
 
-    def _get_selection_pen(self) -> QPen:
-        pen = QPen(self._pen)
-        pen.setStyle(Qt.CustomDashLine)
-        pattern = (0, 3, 0, 3, 3, 0, 3, 0)
-        update_interval = 0.4
-        mod = int(time.monotonic() / update_interval) % (len(pattern) // 2)
-        pen.setDashPattern(pattern[mod * 2:] + pattern[:mod * 2])
-        return pen
+        return self._draggable
+
+    @property
+    def selectable(self) -> bool:
+        """
+        :return: True if component can be selected.
+        """
+
+        return self._selectable
+
+    @property
+    def unique_selection(self) -> bool:
+        """
+        :return: True if selecting this component should reset all others selections.
+        """
+
+        return self._unique_selection
+
+    def paint(self, painter, option, widget = ...) -> None:
+        if option.state & QStyle.State_Selected:
+            option.state &= not QStyle.State_Selected
+        super().paint(painter, option, widget)
 
     def select(self, selected: bool = True) -> None:
-        self._selected = selected
-        if selected:
-            pen = self._get_selection_pen()
-        else:
-            pen = QPen(self._pen)
-        self._item.setPen(pen)
+        """
+        :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is
+        unselected.
+        """
 
-    def set_pen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> None:
-        self._pen = self._create_pen(color, width)
-        self._item.setPen(self._pen)
+        self.setSelected(selected)
+        pen = get_dashed_pen(self._solid_pen) if self.isSelected() else QPen(self._solid_pen)
+        super().setPen(pen)
 
-    def set_rect(self, rect: QRectF) -> None:
-        self.setPos(rect.x(), rect.y())
-        self._item.setRect(0, 0, rect.width(), rect.height())
+    def setPen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> None:
+        """
+        :param color: pen color;
+        :param width: pen width.
+        """
 
-    def update_scale(self, scale: float) -> None:
+        self._solid_pen = create_solid_pen(color, width)
+        super().setPen(QPen(self._solid_pen))
+
+    @staticmethod
+    def update_scale(scale: float) -> None:
         """
         :param scale: new scale.
         """
 
-        pass
+        ...
 
     def update_selection(self) -> None:
-        if self._selected:
-            self._item.setPen(self._get_selection_pen())
+        if self.isSelected():
+            super().setPen(get_dashed_pen(self._solid_pen))
+
+
+def create_solid_pen(color: QColor, width: float) -> QPen:
+    """
+    :param color: pen color;
+    :param width: pen width.
+    :return: solid pen.
+    """
+
+    color = color or "red"
+    width = width or 1
+    return QPen(QBrush(QColor(color)), width)
+
+
+def get_dashed_pen(solid_pen: QPen) -> QPen:
+    """
+    :param solid_pen: solid pen.
+    :return: dashed pen.
+    """
+
+    pen = QPen(solid_pen)
+    pen.setStyle(Qt.CustomDashLine)
+    pattern = 0, 3, 0, 3, 3, 0, 3, 0
+    update_interval = 0.4
+    mod = int(time.monotonic() / update_interval) % (len(pattern) // 2)
+    pen.setDashPattern(pattern[mod * 2:] + pattern[:mod * 2])
+    return pen

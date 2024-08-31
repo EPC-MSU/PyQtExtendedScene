@@ -19,6 +19,7 @@ class AbstractComponent(QGraphicsItem):
         super().__init__()
         self._draggable: bool = draggable
         self._selectable: bool = selectable
+        self._selected: bool = False
         self._unique_selection: bool = unique_selection
 
     @property
@@ -36,6 +37,10 @@ class AbstractComponent(QGraphicsItem):
         """
 
         return self._selectable
+
+    @property
+    def selected(self) -> bool:
+        return self._selected
 
     @property
     def unique_selection(self) -> bool:
@@ -68,7 +73,8 @@ class AbstractComponent(QGraphicsItem):
         :param selected: if True, then set the component as selected.
         """
 
-        pass
+        if self._selectable:
+            self._selected = selected
 
     def update_scale(self, scale: float) -> None:
         """

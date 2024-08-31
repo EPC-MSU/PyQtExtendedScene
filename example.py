@@ -68,8 +68,8 @@ if __name__ == "__main__":
     widget = ExtendedScene(image)
 
     # Let's add some components to our workspace
-    widget.add_component(MyComponent(10, 10, "My component 1"))
-    widget.add_component(MyComponent(100, 200, "My component 2"))
+    # widget.add_component(MyComponent(10, 10, "My component 1"))
+    # widget.add_component(MyComponent(100, 200, "My component 2"))
 
     scalable_component = ScalableComponent(QRectF(50, 60, 300, 200))
     widget.add_component(scalable_component)
