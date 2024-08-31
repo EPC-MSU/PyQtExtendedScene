@@ -123,7 +123,7 @@ class ExtendedScene(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO
 
-    def _handle_mouse_right_button_move(self, event: QMouseEvent) -> None:
+    def _handle_mouse_move_in_create_state(self, event: QMouseEvent) -> None:
         """
         :param event: mouse event.
         """
@@ -139,6 +139,13 @@ class ExtendedScene(QGraphicsView):
         elif self._new_component:
             self._scene.removeItem(self._new_component)
             self._new_component = None
+
+    def _handle_mouse_move_in_resize_state(self, event: QMouseEvent) -> None:
+        """
+        :param event: mouse event.
+        """
+
+        self._current_component.resize_by_mouse(self.mapToScene(event.pos()))
 
     def _handle_mouse_right_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
         """
@@ -207,7 +214,9 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._state == ExtendedScene.State.CREATE:
-            self._handle_mouse_right_button_move(event)
+            self._handle_mouse_move_in_create_state(event)
+        elif self._state == ExtendedScene.State.RESIZE:
+            self._handle_mouse_move_in_resize_state(event)
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

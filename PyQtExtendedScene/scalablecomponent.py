@@ -192,6 +192,15 @@ class ScalableComponent(QGraphicsRectItem):
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
 
+    def resize_by_mouse(self, pos: QPointF) -> None:
+        """
+        :param pos: mouse position.
+        """
+
+        if self._mode == Mode.RESIZE_RIGHT:
+            x = pos.x()
+            left = self.rect().x()
+
     def select(self, selected: bool = True) -> None:
         """
         :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is
