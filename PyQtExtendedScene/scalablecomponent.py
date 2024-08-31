@@ -108,8 +108,19 @@ class ScalableComponent(QGraphicsRectItem):
 
     def _get_mode(self, pos: QPointF) -> Mode:
         """
-        :param pos:
-        :return:
+        :param pos: mouse position.
+        :return: mode.
+        """
+
+        if len(self.scene().selectedItems()) == 1 and self.isSelected():
+            return self._get_mode_by_position(pos)
+
+        return Mode.NO
+
+    def _get_mode_by_position(self, pos: QPointF) -> Mode:
+        """
+        :param pos: mouse position.
+        :return: mode.
         """
 
         x, y = pos.x(), pos.y()
