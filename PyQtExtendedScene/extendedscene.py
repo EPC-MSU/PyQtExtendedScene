@@ -1,9 +1,9 @@
 from enum import auto, Enum
 from typing import List, Optional
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRect, QRectF, QSizeF, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsScene,
-                             QGraphicsView, QRubberBand)
+                             QGraphicsView)
 from .abstractcomponent import AbstractComponent
 from .scalablecomponent import ScalableComponent
 
@@ -42,8 +42,6 @@ class ExtendedScene(QGraphicsView):
         self._current_component: Optional[ScalableComponent] = None
         self._drag_allowed: bool = True
         self._new_component: Optional[ScalableComponent] = None
-        self._rubber_band: QRubberBand = QRubberBand(QRubberBand.Rectangle, self)
-        self._rubber_band.hide()
         self._start_pos: Optional[QPointF] = None
         self._state: ExtendedScene.State = ExtendedScene.State.NO
 
@@ -126,26 +124,14 @@ class ExtendedScene(QGraphicsView):
 
         self._start_pos = self.mapToScene(event.pos())
         self.on_right_click.emit(self._start_pos)
-
-        self._new_component = ScalableComponent()
-        self._new_component.setRect(QRectF(self._start_pos, QSizeF()))
-        self.add_component(self._new_component)
         self._state = ExtendedScene.State.CREATE
 
     def _handle_mouse_right_button_release(self) -> None:
-        self._new_component = None
+        if self._new_component:
+            self._scene.removeItem(self._new_component)
+            self.add_component(self._new_component)
+            self._new_component = None
         self._state = ExtendedScene.State.NO
-
-    def _select_components(self, rect: QRect) -> None:
-        """
-        :param rect: rectangle in which to select components.
-        """
-
-        for item in self.items(rect):
-            if isinstance(item, ScalableComponent):
-                item.select(True)
-                self._scene.removeItem(item)
-                self._components_union.addToGroup(item)
 
     def add_component(self, component: ScalableComponent) -> None:
         """
@@ -193,7 +179,17 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._state == ExtendedScene.State.CREATE:
-            self._new_component.setRect(QRectF(self._start_pos, self.mapToScene(event.pos())))
+            new_pos = self.mapToScene(event.pos())
+            left, right = sorted([self._start_pos.x(), new_pos.x()])
+            top, bottom = sorted([self._start_pos.y(), new_pos.y()])
+            if right - left > 10 and bottom - top > 10:
+                if not self._new_component:
+                    self._new_component = ScalableComponent()
+                    self._scene.addItem(self._new_component)
+                self._new_component.setRect(QRectF(QPointF(left, top), QPointF(right, bottom)))
+            elif self._new_component:
+                self._scene.removeItem(self._new_component)
+                self._new_component = None
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
