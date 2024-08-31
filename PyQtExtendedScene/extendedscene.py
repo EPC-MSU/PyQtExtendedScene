@@ -10,8 +10,9 @@ from .scalablecomponent import ScalableComponent
 
 class ExtendedScene(QGraphicsView):
 
-    MINIMUM_SCALE: int = 0.1
-    UPDATE_INTERVAL: int = 10
+    MIN_COMPONENT_SIZE: float = 2
+    MIN_SCALE: float = 0.1
+    UPDATE_INTERVAL: int = 10  # msec
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -120,7 +121,7 @@ class ExtendedScene(QGraphicsView):
         new_pos = self.mapToScene(event.pos())
         left, right = sorted([self._start_pos.x(), new_pos.x()])
         top, bottom = sorted([self._start_pos.y(), new_pos.y()])
-        if right - left > 10 and bottom - top > 10:
+        if right - left >= ExtendedScene.MIN_COMPONENT_SIZE and bottom - top >= ExtendedScene.MIN_COMPONENT_SIZE:
             if not self._new_component:
                 self._new_component = ScalableComponent()
                 self._scene.addItem(self._new_component)
@@ -251,7 +252,7 @@ class ExtendedScene(QGraphicsView):
 
         factor_x = x / self._background.pixmap().width()
         factor_y = y / self._background.pixmap().height()
-        factor = max(min(factor_x, factor_y), self.MINIMUM_SCALE)
+        factor = max(min(factor_x, factor_y), self.MIN_SCALE)
         self.resetTransform()
         self._scale = factor
         self.zoom(factor, QPoint(0, 0))
@@ -273,7 +274,7 @@ class ExtendedScene(QGraphicsView):
 
         zoom_factor = 1.0
         zoom_factor += event.angleDelta().y() * self._zoom_speed
-        if self._scale * zoom_factor < self.MINIMUM_SCALE and zoom_factor < 1.0:  # minimum allowed zoom
+        if self._scale * zoom_factor < self.MIN_SCALE and zoom_factor < 1.0:  # minimum allowed zoom
             return
 
         self.zoom(zoom_factor, event.pos())
