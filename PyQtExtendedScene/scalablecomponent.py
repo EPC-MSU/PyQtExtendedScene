@@ -1,8 +1,8 @@
 import time
 from typing import Optional
 from PyQt5.QtCore import QRectF, Qt
-from PyQt5.QtGui import QBrush, QColor, QPen
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem, QStyle
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem, QStyle, QStyleOptionGraphicsItem, QWidget
 
 
 class ScalableComponent(QGraphicsRectItem):
@@ -58,7 +58,7 @@ class ScalableComponent(QGraphicsRectItem):
 
         return self._unique_selection
 
-    def paint(self, painter, option, widget = ...) -> None:
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         if option.state & QStyle.State_Selected:
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
@@ -93,6 +93,8 @@ class ScalableComponent(QGraphicsRectItem):
     def update_selection(self) -> None:
         if self.isSelected():
             super().setPen(get_dashed_pen(self._solid_pen))
+        elif self.pen() != self._solid_pen:
+            super().setPen(QPen(self._solid_pen))
 
 
 def create_solid_pen(color: QColor, width: float) -> QPen:

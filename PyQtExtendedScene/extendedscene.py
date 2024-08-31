@@ -1,6 +1,6 @@
 from enum import auto, Enum
 from typing import List, Optional
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRect, QRectF, QSizeF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsScene,
                              QGraphicsView, QRubberBand)
@@ -11,7 +11,7 @@ from .scalablecomponent import ScalableComponent
 class ExtendedScene(QGraphicsView):
 
     MINIMUM_SCALE: int = 0.1
-    UPDATE_INTERVAL: int = 400
+    UPDATE_INTERVAL: int = 10
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
