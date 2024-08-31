@@ -5,7 +5,7 @@ from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsScene,
                              QGraphicsView)
 from .abstractcomponent import AbstractComponent
-from .scalablecomponent import ScalableComponent
+from .scalablecomponent import Mode, ScalableComponent
 
 
 class ExtendedScene(QGraphicsView):
@@ -25,6 +25,7 @@ class ExtendedScene(QGraphicsView):
         DRAG = auto()
         DRAG_COMPONENT = auto()
         NO = auto()
+        RESIZE = auto()
         SELECT = auto()
 
     def __init__(self, background: Optional[QPixmap] = None, zoom_speed: float = 0.001, parent=None) -> None:
@@ -82,6 +83,12 @@ class ExtendedScene(QGraphicsView):
         :param item: component clicked by mouse.
         """
 
+        if item and item.isSelected() and item.mode not in (Mode.MOVE, Mode.NO):
+            item.setFlag(QGraphicsItem.ItemIsMovable, False)
+            self._current_component = item
+            self._state = ExtendedScene.State.RESIZE
+            return
+
         if item:
             self.on_component_left_click.emit(item)
             if item.selectable:
@@ -99,8 +106,11 @@ class ExtendedScene(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
 
         if self._state == ExtendedScene.State.DRAG_COMPONENT:
-            if self._current_component:
-                self.on_component_moved.emit(self._current_component)
+            if self._scene.selectedItems():
+                self.on_component_moved.emit(self._scene.selectedItems()[0])
+        elif self._state == ExtendedScene.State.RESIZE:
+            for item in self._scene.selectedItems():
+                item.setFlag(QGraphicsItem.ItemIsMovable, True)
 
         self._state = ExtendedScene.State.NO
 
