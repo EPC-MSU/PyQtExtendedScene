@@ -112,6 +112,23 @@ class ExtendedScene(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO
 
+    def _handle_mouse_right_button_move(self, event: QMouseEvent) -> None:
+        """
+        :param event: mouse event.
+        """
+
+        new_pos = self.mapToScene(event.pos())
+        left, right = sorted([self._start_pos.x(), new_pos.x()])
+        top, bottom = sorted([self._start_pos.y(), new_pos.y()])
+        if right - left > 10 and bottom - top > 10:
+            if not self._new_component:
+                self._new_component = ScalableComponent()
+                self._scene.addItem(self._new_component)
+            self._new_component.setRect(QRectF(QPointF(left, top), QPointF(right, bottom)))
+        elif self._new_component:
+            self._scene.removeItem(self._new_component)
+            self._new_component = None
+
     def _handle_mouse_right_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
         """
         :param event: mouse event;
@@ -179,17 +196,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._state == ExtendedScene.State.CREATE:
-            new_pos = self.mapToScene(event.pos())
-            left, right = sorted([self._start_pos.x(), new_pos.x()])
-            top, bottom = sorted([self._start_pos.y(), new_pos.y()])
-            if right - left > 10 and bottom - top > 10:
-                if not self._new_component:
-                    self._new_component = ScalableComponent()
-                    self._scene.addItem(self._new_component)
-                self._new_component.setRect(QRectF(QPointF(left, top), QPointF(right, bottom)))
-            elif self._new_component:
-                self._scene.removeItem(self._new_component)
-                self._new_component = None
+            self._handle_mouse_right_button_move(event)
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
