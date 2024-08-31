@@ -1,14 +1,31 @@
 import time
+from enum import auto, Enum
 from typing import Optional
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem, QStyle, QStyleOptionGraphicsItem, QWidget
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
+                             QStyleOptionGraphicsItem, QWidget)
+
+
+class Mode(Enum):
+    MOVE_BOTTOM = auto()
+    MOVE_LEFT = auto()
+    MOVE_RIGHT = auto()
+    MOVE_TOP = auto()
+    NO = auto()
+    RESIZE = auto()
 
 
 class ScalableComponent(QGraphicsRectItem):
     """
     Rectangular component that can be drawn with the mouse and resized.
     """
+
+    CURSORS = {Mode.MOVE_BOTTOM: Qt.SizeVerCursor,
+               Mode.MOVE_LEFT: Qt.SizeHorCursor,
+               Mode.MOVE_RIGHT: Qt.SizeHorCursor,
+               Mode.MOVE_TOP: Qt.SizeVerCursor,
+               Mode.NO: Qt.ArrowCursor}
 
     def __init__(self, rect: Optional[QRectF] = None, pen_color: Optional[QColor] = None,
                  pen_width: Optional[float] = None, draggable: bool = True, selectable: bool = True,
@@ -25,11 +42,14 @@ class ScalableComponent(QGraphicsRectItem):
 
         super().__init__()
         self._draggable: bool = draggable
+        self._mode: Mode = Mode.NO
         self._selectable: bool = selectable
         self._solid_pen: QPen = QPen()
         self._unique_selection: bool = unique_selection
 
-        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
         self.setPen(pen_color, pen_width)
         if rect:
             self.setRect(rect)
@@ -57,6 +77,45 @@ class ScalableComponent(QGraphicsRectItem):
         """
 
         return self._unique_selection
+
+    def _get_mode(self, pos: QPointF) -> Mode:
+        """
+        :param pos:
+        :return:
+        """
+
+        x, y = pos.x(), pos.y()
+        pen_width = self.pen().width()
+        left = self.rect().x()
+        right = left + self.rect().width()
+        top = self.rect().y()
+        bottom = top + self.rect().height()
+        if top <= y <= bottom:
+            if left - pen_width <= x <= left + pen_width / 2:
+                return Mode.MOVE_LEFT
+
+            if right - pen_width / 2 <= x <= right + pen_width:
+                return Mode.MOVE_RIGHT
+
+        if left <= x <= right:
+            if top - pen_width <= y <= top + pen_width / 2:
+                return Mode.MOVE_TOP
+
+            if bottom - pen_width / 2 <= y <= bottom + pen_width:
+                return Mode.MOVE_BOTTOM
+
+        return Mode.NO
+
+    def _set_cursor(self) -> None:
+        self.setCursor(ScalableComponent.CURSORS.get(self._mode, Qt.ArrowCursor))
+
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        self._mode = self._get_mode(event.pos())
+        self._set_cursor()
+
+    def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        self._mode = self._get_mode(event.pos())
+        self._set_cursor()
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         if option.state & QStyle.State_Selected:
