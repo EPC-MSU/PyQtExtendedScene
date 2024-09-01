@@ -7,26 +7,17 @@ from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHov
                              QStyleOptionGraphicsItem, QWidget)
 
 
-class Mode(Enum):
-    MOVE = auto()
-    NO = auto()
-    RESIZE_ANY = auto()
-    RESIZE_BOTTOM = auto()
-    RESIZE_LEFT = auto()
-    RESIZE_LEFT_BOTTOM = auto()
-    RESIZE_LEFT_TOP = auto()
-    RESIZE_RIGHT = auto()
-    RESIZE_RIGHT_BOTTOM = auto()
-    RESIZE_RIGHT_TOP = auto()
-    RESIZE_TOP = auto()
-
-
-def change_rect(func: Callable[[QPointF], Tuple[float, float]]):
+def change_rect_and_pos(func: Callable[[QPointF], Tuple[float, float]]):
     """
-    :param func:
+    Decorator changes the position and size of the scalable component.
+    :param func: decorated function.
     """
 
     def wrapper(self, pos: QPointF) -> None:
+        """
+        :param pos: mouse position.
+        """
+
         width, height = func(self, pos)
         self.setRect(0, 0, width, height)
         x = self.pos().x() if self._x_fixed is None else min(pos.x(), self._x_fixed)
@@ -40,6 +31,23 @@ class ScalableComponent(QGraphicsRectItem):
     """
     Rectangular component that can be drawn with the mouse and resized.
     """
+
+    class Mode(Enum):
+        """
+        Enumerates the modes in which the component can be
+        """
+        
+        MOVE = auto()  # moving a component
+        NO = auto()
+        RESIZE_ANY = auto()
+        RESIZE_BOTTOM = auto()  # resizing by moving the bottom side
+        RESIZE_LEFT = auto()  # resizing by moving the left side
+        RESIZE_LEFT_BOTTOM = auto()
+        RESIZE_LEFT_TOP = auto()
+        RESIZE_RIGHT = auto()  # resizing by moving the right side
+        RESIZE_RIGHT_BOTTOM = auto()
+        RESIZE_RIGHT_TOP = auto()
+        RESIZE_TOP = auto()  # resizing by moving the top side
 
     CURSORS = {Mode.MOVE: Qt.SizeAllCursor,
                Mode.NO: Qt.ArrowCursor,
@@ -71,7 +79,7 @@ class ScalableComponent(QGraphicsRectItem):
 
         super().__init__()
         self._draggable: bool = draggable
-        self._mode: Mode = Mode.NO
+        self._mode: ScalableComponent.Mode = ScalableComponent.Mode.NO
         self._selectable: bool = selectable
         self._solid_pen: QPen = QPen()
         self._unique_selection: bool = unique_selection
@@ -94,7 +102,11 @@ class ScalableComponent(QGraphicsRectItem):
         return self._draggable
 
     @property
-    def mode(self) -> Mode:
+    def mode(self) -> "Mode":
+        """
+        :return: mode the component is in. The component can be in move or resize mode.
+        """
+
         return self._mode
 
     @property
@@ -114,7 +126,7 @@ class ScalableComponent(QGraphicsRectItem):
         return self._unique_selection
 
     @staticmethod
-    def _create_solid_pen(color: QColor, width: float) -> QPen:
+    def _create_solid_pen(color: Optional[QColor] = None, width: Optional[float] = None) -> QPen:
         """
         :param color: pen color;
         :param width: pen width.
@@ -132,11 +144,11 @@ class ScalableComponent(QGraphicsRectItem):
         """
 
         if len(self.scene().selectedItems()) == 1 and self.isSelected():
-            return self._get_mode_by_position(pos)
+            return self._get_mode_by_mouse_position(pos)
 
-        return Mode.NO
+        return ScalableComponent.Mode.NO
 
-    def _get_mode_by_position(self, pos: QPointF) -> Mode:
+    def _get_mode_by_mouse_position(self, pos: QPointF) -> Mode:
         """
         :param pos: mouse position.
         :return: mode.
@@ -153,74 +165,75 @@ class ScalableComponent(QGraphicsRectItem):
 
         if top <= y <= top + ScalableComponent.DIAG_PORTION * height:
             if left - pen_width <= x <= left + pen_width / 2:
-                return Mode.RESIZE_LEFT_TOP
+                return ScalableComponent.Mode.RESIZE_LEFT_TOP
 
             if right - pen_width / 2 <= x <= right + pen_width:
-                return Mode.RESIZE_RIGHT_TOP
+                return ScalableComponent.Mode.RESIZE_RIGHT_TOP
 
         if top + ScalableComponent.DIAG_PORTION * height < y < bottom - ScalableComponent.DIAG_PORTION * height:
             if left - pen_width <= x <= left + pen_width / 2:
-                return Mode.RESIZE_LEFT
+                return ScalableComponent.Mode.RESIZE_LEFT
 
             if right - pen_width / 2 <= x <= right + pen_width:
-                return Mode.RESIZE_RIGHT
+                return ScalableComponent.Mode.RESIZE_RIGHT
 
         if bottom - ScalableComponent.DIAG_PORTION * height <= y <= bottom:
             if left - pen_width <= x <= left + pen_width / 2:
-                return Mode.RESIZE_LEFT_BOTTOM
+                return ScalableComponent.Mode.RESIZE_LEFT_BOTTOM
 
             if right - pen_width / 2 <= x <= right + pen_width:
-                return Mode.RESIZE_RIGHT_BOTTOM
+                return ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM
 
         if left <= x <= left + ScalableComponent.DIAG_PORTION * width:
             if top - pen_width <= y <= top + pen_width / 2:
-                return Mode.RESIZE_LEFT_TOP
+                return ScalableComponent.Mode.RESIZE_LEFT_TOP
 
             if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return Mode.RESIZE_LEFT_BOTTOM
+                return ScalableComponent.Mode.RESIZE_LEFT_BOTTOM
 
         if left + ScalableComponent.DIAG_PORTION * width < x < right - ScalableComponent.DIAG_PORTION * width:
             if top - pen_width <= y <= top + pen_width / 2:
-                return Mode.RESIZE_TOP
+                return ScalableComponent.Mode.RESIZE_TOP
 
             if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return Mode.RESIZE_BOTTOM
+                return ScalableComponent.Mode.RESIZE_BOTTOM
 
         if right - ScalableComponent.DIAG_PORTION * width <= x <= right:
             if top - pen_width <= y <= top + pen_width / 2:
-                return Mode.RESIZE_RIGHT_TOP
+                return ScalableComponent.Mode.RESIZE_RIGHT_TOP
 
             if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return Mode.RESIZE_RIGHT_BOTTOM
+                return ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM
 
-        return Mode.NO
+        return ScalableComponent.Mode.NO
 
-    @change_rect
+    @change_rect_and_pos
     def _resize_at_any_mode(self, pos: QPointF) -> Tuple[float, float]:
         """
         :param pos: mouse position.
+        :return: new component width and height.
         """
 
         width = abs(pos.x() - self._x_fixed)
         height = abs(pos.y() - self._y_fixed)
         return width, height
 
-    @change_rect
+    @change_rect_and_pos
     def _resize_at_bottom_and_top_mode(self, pos: QPointF) -> Tuple[float, float]:
         """
         :param pos: mouse position.
-        :return:
+        :return: new component width and height.
         """
 
         width = self.rect().width()
         height = abs(pos.y() - self._y_fixed)
         return width, height
 
-    @change_rect
+    @change_rect_and_pos
     def _resize_at_left_and_right_mode(self, pos: QPointF) -> Tuple[float, float]:
         """
         :param pos: mouse position.
-        :return:
+        :return: new component width and height.
         """
 
         width = abs(pos.x() - self._x_fixed)
@@ -243,23 +256,23 @@ class ScalableComponent(QGraphicsRectItem):
         """
 
         self._mode = mode
-        if self._mode == Mode.RESIZE_ANY:
+        if self._mode == ScalableComponent.Mode.RESIZE_ANY:
             self._x_fixed, self._y_fixed = self.pos().x(), self.pos().y()
-        elif self._mode == Mode.RESIZE_BOTTOM:
+        elif self._mode == ScalableComponent.Mode.RESIZE_BOTTOM:
             self._x_fixed, self._y_fixed = None, self.pos().y()
-        elif self._mode == Mode.RESIZE_LEFT:
+        elif self._mode == ScalableComponent.Mode.RESIZE_LEFT:
             self._x_fixed, self._y_fixed = self.pos().x() + self.rect().width(), None
-        elif self._mode == Mode.RESIZE_LEFT_BOTTOM:
+        elif self._mode == ScalableComponent.Mode.RESIZE_LEFT_BOTTOM:
             self._x_fixed, self._y_fixed = self.pos().x() + self.rect().width(), self.pos().y()
-        elif self._mode == Mode.RESIZE_LEFT_TOP:
+        elif self._mode == ScalableComponent.Mode.RESIZE_LEFT_TOP:
             self._x_fixed, self._y_fixed = self.pos().x() + self.rect().width(), self.pos().y() + self.rect().height()
-        elif self._mode == Mode.RESIZE_RIGHT:
+        elif self._mode == ScalableComponent.Mode.RESIZE_RIGHT:
             self._x_fixed, self._y_fixed = self.pos().x(), None
-        elif self._mode == Mode.RESIZE_RIGHT_BOTTOM:
+        elif self._mode == ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM:
             self._x_fixed, self._y_fixed = self.pos().x(), self.pos().y()
-        elif self._mode == Mode.RESIZE_RIGHT_TOP:
+        elif self._mode == ScalableComponent.Mode.RESIZE_RIGHT_TOP:
             self._x_fixed, self._y_fixed = self.pos().x(), self.pos().y() + self.rect().height()
-        elif self._mode == Mode.RESIZE_TOP:
+        elif self._mode == ScalableComponent.Mode.RESIZE_TOP:
             self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
@@ -280,12 +293,13 @@ class ScalableComponent(QGraphicsRectItem):
         :param pos: mouse position.
         """
 
-        if self._mode in (Mode.RESIZE_ANY, Mode.RESIZE_LEFT_BOTTOM, Mode.RESIZE_LEFT_TOP, Mode.RESIZE_RIGHT_BOTTOM,
-                          Mode.RESIZE_RIGHT_TOP):
+        if self._mode in (ScalableComponent.Mode.RESIZE_ANY, ScalableComponent.Mode.RESIZE_LEFT_BOTTOM,
+                          ScalableComponent.Mode.RESIZE_LEFT_TOP, ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM,
+                          ScalableComponent.Mode.RESIZE_RIGHT_TOP):
             self._resize_at_any_mode(pos)
-        elif self._mode in (Mode.RESIZE_BOTTOM, Mode.RESIZE_TOP):
+        elif self._mode in (ScalableComponent.Mode.RESIZE_BOTTOM, ScalableComponent.Mode.RESIZE_TOP):
             self._resize_at_bottom_and_top_mode(pos)
-        elif self._mode in (Mode.RESIZE_LEFT, Mode.RESIZE_RIGHT):
+        elif self._mode in (ScalableComponent.Mode.RESIZE_LEFT, ScalableComponent.Mode.RESIZE_RIGHT):
             self._resize_at_left_and_right_mode(pos)
 
     def select(self, selected: bool = True) -> None:
