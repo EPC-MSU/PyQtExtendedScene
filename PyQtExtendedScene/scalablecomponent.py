@@ -36,7 +36,7 @@ class ScalableComponent(QGraphicsRectItem):
                Mode.RESIZE_RIGHT_TOP: Qt.SizeBDiagCursor,
                Mode.RESIZE_TOP: Qt.SizeVerCursor}
     DIAG_PORTION: float = 0.05
-    PEN_COLOR: str = "#0047AB"
+    PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
 
     def __init__(self, rect: Optional[QRectF] = None, pen_color: Optional[QColor] = None,
@@ -104,7 +104,7 @@ class ScalableComponent(QGraphicsRectItem):
 
         color = color or ScalableComponent.PEN_COLOR
         width = width or ScalableComponent.PEN_WIDTH
-        return QPen(QBrush(QColor(color)), width)
+        return QPen(QBrush(color), width)
 
     def _get_mode(self, pos: QPointF) -> Mode:
         """
