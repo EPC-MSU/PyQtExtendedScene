@@ -55,28 +55,23 @@ def left_click(component: MyComponent) -> None:
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    # Open workspace background image
-    path_to_image = os.path.join("images", "workspace.png")
-    if not os.path.isfile(path_to_image):
-        path_to_image = QFileDialog().getOpenFileName(caption="Open workspace image",
-                                                      filter="Image Files (*.png *.jpg *.bmp *.tiff)")[0]
-
-    image = QPixmap(path_to_image)
-    image = image.scaled(800, 600)
     # Create workspace!
-    widget = ExtendedScene(image)
+    widget = ExtendedScene()
+    widget.setBackgroundBrush(QBrush(QColor("white")))
 
-    # Let's add some components to our workspace
-    # widget.add_component(MyComponent(10, 10, "My component 1"))
-    # widget.add_component(MyComponent(100, 200, "My component 2"))
-
-    component_1 = ScalableComponent(QRectF(0, 0, 300, 200))
-    component_1.setPos(50, 60)
-    widget.add_component(component_1)
-    component_2 = ScalableComponent(QRectF(0, 0, 300, 200), QColor("red"))
-    component_2.setPos(30, 260)
-    widget.add_component(component_2)
+    n = 10
+    m = 10
+    width = 50
+    height = 50
+    dx = 5
+    dy = 5
+    for i in range(n):
+        for j in range(m):
+            x = j * (width + dx)
+            y = i * (height + dy)
+            component = ScalableComponent(QRectF(0, 0, width, height))
+            component.setPos(x, y)
+            widget.add_component(component)
 
     # Handle left click
     widget.on_component_left_click.connect(left_click)
