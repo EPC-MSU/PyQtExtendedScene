@@ -1,8 +1,8 @@
 from enum import auto, Enum
 from typing import List, Optional
 from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer
-from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPixmap, QWheelEvent
-from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView
+from PyQt5.QtGui import QBrush, QColor, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
+from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from .abstractcomponent import AbstractComponent
 from .scalablecomponent import ScalableComponent
 
@@ -62,8 +62,18 @@ class ExtendedScene(QGraphicsView):
         # For keyboard events
         self.setFocusPolicy(Qt.StrongFocus)
 
+        self._copy_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self)
+        self._copy_shortcut.setContext(Qt.WindowShortcut)
+        self._copy_shortcut.activated.connect(self._copy_components)
+        self._paste_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self)
+        self._paste_shortcut.setContext(Qt.WindowShortcut)
+        self._paste_shortcut.activated.connect(self._paste_components)
+
         self._timer: QTimer = QTimer()
         self._timer.start(ExtendedScene.UPDATE_INTERVAL)
+
+    def _copy_components(self) -> None:
+        print("____copy")
 
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[ScalableComponent]:
         """
@@ -152,6 +162,9 @@ class ExtendedScene(QGraphicsView):
                 self.add_component(self._current_component)
             self._current_component = None
         self._state = ExtendedScene.State.NO
+
+    def _paste_components(self) -> None:
+        print("____paste")
 
     def add_component(self, component: ScalableComponent) -> None:
         """
