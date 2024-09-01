@@ -204,7 +204,7 @@ class ScalableComponent(QGraphicsRectItem):
         width = abs(pos.x() - self._x_fixed)
         height = abs(pos.y() - self._y_fixed)
         return width, height
-    
+
     @change_rect
     def _resize_at_bottom_and_top_mode(self, pos: QPointF) -> Tuple[float, float]:
         """
@@ -215,7 +215,7 @@ class ScalableComponent(QGraphicsRectItem):
         width = self.rect().width()
         height = abs(pos.y() - self._y_fixed)
         return width, height
-    
+
     @change_rect
     def _resize_at_left_and_right_mode(self, pos: QPointF) -> Tuple[float, float]:
         """
@@ -229,7 +229,7 @@ class ScalableComponent(QGraphicsRectItem):
 
     def _set_cursor(self) -> None:
         self.setCursor(ScalableComponent.CURSORS.get(self._mode, Qt.ArrowCursor))
-    
+
     def check_big_enough(self) -> bool:
         """
         :return: if True, then the component is larger than the allowed minimum size.
@@ -280,7 +280,8 @@ class ScalableComponent(QGraphicsRectItem):
         :param pos: mouse position.
         """
 
-        if self._mode in (Mode.RESIZE_ANY, Mode.RESIZE_LEFT_BOTTOM, Mode.RESIZE_LEFT_TOP, Mode.RESIZE_RIGHT_BOTTOM, Mode.RESIZE_RIGHT_TOP):
+        if self._mode in (Mode.RESIZE_ANY, Mode.RESIZE_LEFT_BOTTOM, Mode.RESIZE_LEFT_TOP, Mode.RESIZE_RIGHT_BOTTOM,
+                          Mode.RESIZE_RIGHT_TOP):
             self._resize_at_any_mode(pos)
         elif self._mode in (Mode.RESIZE_BOTTOM, Mode.RESIZE_TOP):
             self._resize_at_bottom_and_top_mode(pos)
