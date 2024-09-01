@@ -71,8 +71,12 @@ if __name__ == "__main__":
     # widget.add_component(MyComponent(10, 10, "My component 1"))
     # widget.add_component(MyComponent(100, 200, "My component 2"))
 
-    widget.add_component(ScalableComponent(QRectF(50, 60, 300, 200)))
-    widget.add_component(ScalableComponent(QRectF(50, 270, 300, 200), QColor("red")))
+    component_1 = ScalableComponent(QRectF(0, 0, 300, 200))
+    component_1.setPos(50, 60)
+    widget.add_component(component_1)
+    component_2 = ScalableComponent(QRectF(0, 0, 300, 200), QColor("red"))
+    component_2.setPos(30, 260)
+    widget.add_component(component_2)
 
     # Handle left click
     widget.on_component_left_click.connect(left_click)

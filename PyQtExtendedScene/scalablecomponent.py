@@ -1,6 +1,6 @@
 import time
 from enum import auto, Enum
-from typing import Optional
+from typing import Callable, Optional, Tuple
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHov
 class Mode(Enum):
     MOVE = auto()
     NO = auto()
+    RESIZE_ANY = auto()
     RESIZE_BOTTOM = auto()
     RESIZE_LEFT = auto()
     RESIZE_LEFT_BOTTOM = auto()
@@ -18,6 +19,21 @@ class Mode(Enum):
     RESIZE_RIGHT_BOTTOM = auto()
     RESIZE_RIGHT_TOP = auto()
     RESIZE_TOP = auto()
+
+
+def change_rect(func: Callable[[QPointF], Tuple[float, float]]):
+    """
+    :param func:
+    """
+
+    def wrapper(self, pos: QPointF) -> None:
+        width, height = func(self, pos)
+        self.setRect(0, 0, width, height)
+        x = self.pos().x() if self._x_fixed is None else min(pos.x(), self._x_fixed)
+        y = self.pos().y() if self._y_fixed is None else min(pos.y(), self._y_fixed)
+        self.setPos(x, y)
+
+    return wrapper
 
 
 class ScalableComponent(QGraphicsRectItem):
@@ -36,6 +52,7 @@ class ScalableComponent(QGraphicsRectItem):
                Mode.RESIZE_RIGHT_TOP: Qt.SizeBDiagCursor,
                Mode.RESIZE_TOP: Qt.SizeVerCursor}
     DIAG_PORTION: float = 0.05
+    MIN_SIZE: float = 2
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
 
@@ -43,9 +60,9 @@ class ScalableComponent(QGraphicsRectItem):
                  pen_width: Optional[float] = None, draggable: bool = True, selectable: bool = True,
                  unique_selection: bool = False) -> None:
         """
-        :param rect:
-        :param pen_color:
-        :param pen_width:
+        :param rect: rect for component;
+        :param pen_color: pen color;
+        :param pen_width: pen width;
         :param draggable: True if component can be dragged;
         :param selectable: True if component can be selected;
         :param unique_selection: True if selecting this component should reset all others selections
@@ -58,12 +75,14 @@ class ScalableComponent(QGraphicsRectItem):
         self._selectable: bool = selectable
         self._solid_pen: QPen = QPen()
         self._unique_selection: bool = unique_selection
+        self._x_fixed: Optional[float] = None
+        self._y_fixed: Optional[float] = None
 
         self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
         self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
         self.setPen(pen_color, pen_width)
-        if rect:
+        if rect is not None:
             self.setRect(rect)
 
     @property
@@ -127,10 +146,10 @@ class ScalableComponent(QGraphicsRectItem):
         pen_width = self.pen().width()
         left = self.rect().x()
         width = self.rect().width()
-        right = left + width
+        right = self.rect().right()
         top = self.rect().y()
         height = self.rect().height()
-        bottom = top + height
+        bottom = self.rect().bottom()
 
         if top <= y <= top + ScalableComponent.DIAG_PORTION * height:
             if left - pen_width <= x <= left + pen_width / 2:
@@ -176,8 +195,72 @@ class ScalableComponent(QGraphicsRectItem):
 
         return Mode.NO
 
+    @change_rect
+    def _resize_at_any_mode(self, pos: QPointF) -> Tuple[float, float]:
+        """
+        :param pos: mouse position.
+        """
+
+        width = abs(pos.x() - self._x_fixed)
+        height = abs(pos.y() - self._y_fixed)
+        return width, height
+    
+    @change_rect
+    def _resize_at_bottom_and_top_mode(self, pos: QPointF) -> Tuple[float, float]:
+        """
+        :param pos: mouse position.
+        :return:
+        """
+
+        width = self.rect().width()
+        height = abs(pos.y() - self._y_fixed)
+        return width, height
+    
+    @change_rect
+    def _resize_at_left_and_right_mode(self, pos: QPointF) -> Tuple[float, float]:
+        """
+        :param pos: mouse position.
+        :return:
+        """
+
+        width = abs(pos.x() - self._x_fixed)
+        height = self.rect().height()
+        return width, height
+
     def _set_cursor(self) -> None:
         self.setCursor(ScalableComponent.CURSORS.get(self._mode, Qt.ArrowCursor))
+    
+    def check_big_enough(self) -> bool:
+        """
+        :return: if True, then the component is larger than the allowed minimum size.
+        """
+
+        return self.rect().width() >= ScalableComponent.MIN_SIZE and self.rect().height() >= ScalableComponent.MIN_SIZE
+
+    def fix_mode(self, mode: Mode) -> None:
+        """
+        :param mode: new mode.
+        """
+
+        self._mode = mode
+        if self._mode == Mode.RESIZE_ANY:
+            self._x_fixed, self._y_fixed = self.pos().x(), self.pos().y()
+        elif self._mode == Mode.RESIZE_BOTTOM:
+            self._x_fixed, self._y_fixed = None, self.pos().y()
+        elif self._mode == Mode.RESIZE_LEFT:
+            self._x_fixed, self._y_fixed = self.pos().x() + self.rect().width(), None
+        elif self._mode == Mode.RESIZE_LEFT_BOTTOM:
+            self._x_fixed, self._y_fixed = self.pos().x() + self.rect().width(), self.pos().y()
+        elif self._mode == Mode.RESIZE_LEFT_TOP:
+            self._x_fixed, self._y_fixed = self.pos().x() + self.rect().width(), self.pos().y() + self.rect().height()
+        elif self._mode == Mode.RESIZE_RIGHT:
+            self._x_fixed, self._y_fixed = self.pos().x(), None
+        elif self._mode == Mode.RESIZE_RIGHT_BOTTOM:
+            self._x_fixed, self._y_fixed = self.pos().x(), self.pos().y()
+        elif self._mode == Mode.RESIZE_RIGHT_TOP:
+            self._x_fixed, self._y_fixed = self.pos().x(), self.pos().y() + self.rect().height()
+        elif self._mode == Mode.RESIZE_TOP:
+            self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         self._mode = self._get_mode(event.pos())
@@ -197,9 +280,12 @@ class ScalableComponent(QGraphicsRectItem):
         :param pos: mouse position.
         """
 
-        if self._mode == Mode.RESIZE_RIGHT:
-            x = pos.x()
-            left = self.rect().x()
+        if self._mode in (Mode.RESIZE_ANY, Mode.RESIZE_LEFT_BOTTOM, Mode.RESIZE_LEFT_TOP, Mode.RESIZE_RIGHT_BOTTOM, Mode.RESIZE_RIGHT_TOP):
+            self._resize_at_any_mode(pos)
+        elif self._mode in (Mode.RESIZE_BOTTOM, Mode.RESIZE_TOP):
+            self._resize_at_bottom_and_top_mode(pos)
+        elif self._mode in (Mode.RESIZE_LEFT, Mode.RESIZE_RIGHT):
+            self._resize_at_left_and_right_mode(pos)
 
     def select(self, selected: bool = True) -> None:
         """

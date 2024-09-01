@@ -10,7 +10,6 @@ from .scalablecomponent import Mode, ScalableComponent
 
 class ExtendedScene(QGraphicsView):
 
-    MIN_COMPONENT_SIZE: float = 2
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -43,7 +42,6 @@ class ExtendedScene(QGraphicsView):
         self._components_union: QGraphicsItemGroup = QGraphicsItemGroup()
         self._current_component: Optional[ScalableComponent] = None
         self._drag_allowed: bool = True
-        self._new_component: Optional[ScalableComponent] = None
         self._start_pos: Optional[QPointF] = None
         self._state: ExtendedScene.State = ExtendedScene.State.NO
 
@@ -86,6 +84,7 @@ class ExtendedScene(QGraphicsView):
         if item and item.isSelected() and item.mode not in (Mode.MOVE, Mode.NO):
             item.setFlag(QGraphicsItem.ItemIsMovable, False)
             self._current_component = item
+            self._current_component.fix_mode(item.mode)
             self._state = ExtendedScene.State.RESIZE
             return
 
@@ -107,6 +106,9 @@ class ExtendedScene(QGraphicsView):
 
         if self._state == ExtendedScene.State.DRAG_COMPONENT:
             if self._scene.selectedItems():
+                for item in self._scene.selectedItems():
+                    new_top_left = item.mapToScene(item.rect().topLeft())
+                    item.setPos(new_top_left)
                 self.on_component_moved.emit(self._scene.selectedItems()[0])
         elif self._state == ExtendedScene.State.RESIZE:
             for item in self._scene.selectedItems():
@@ -123,30 +125,6 @@ class ExtendedScene(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO
 
-    def _handle_mouse_move_in_create_state(self, event: QMouseEvent) -> None:
-        """
-        :param event: mouse event.
-        """
-
-        new_pos = self.mapToScene(event.pos())
-        left, right = sorted([self._start_pos.x(), new_pos.x()])
-        top, bottom = sorted([self._start_pos.y(), new_pos.y()])
-        if right - left >= ExtendedScene.MIN_COMPONENT_SIZE and bottom - top >= ExtendedScene.MIN_COMPONENT_SIZE:
-            if not self._new_component:
-                self._new_component = ScalableComponent()
-                self._scene.addItem(self._new_component)
-            self._new_component.setRect(QRectF(QPointF(left, top), QPointF(right, bottom)))
-        elif self._new_component:
-            self._scene.removeItem(self._new_component)
-            self._new_component = None
-
-    def _handle_mouse_move_in_resize_state(self, event: QMouseEvent) -> None:
-        """
-        :param event: mouse event.
-        """
-
-        self._current_component.resize_by_mouse(self.mapToScene(event.pos()))
-
     def _handle_mouse_right_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
         """
         :param event: mouse event;
@@ -157,15 +135,21 @@ class ExtendedScene(QGraphicsView):
             self.on_component_right_click.emit(item)
             return
 
-        self._start_pos = self.mapToScene(event.pos())
-        self.on_right_click.emit(self._start_pos)
+        pos = self.mapToScene(event.pos())
+        self._current_component = ScalableComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
+        self._current_component.setPos(pos)
+        self._scene.addItem(self._current_component)
+        self._current_component.fix_mode(Mode.RESIZE_ANY)
+        self.on_right_click.emit(pos)
         self._state = ExtendedScene.State.CREATE
 
     def _handle_mouse_right_button_release(self) -> None:
-        if self._new_component:
-            self._scene.removeItem(self._new_component)
-            self.add_component(self._new_component)
-            self._new_component = None
+        if self._current_component:
+            self._scene.removeItem(self._current_component)
+            if self._current_component.check_big_enough():
+                self._current_component.fix_mode(Mode.NO)
+                self.add_component(self._current_component)
+            self._current_component = None
         self._state = ExtendedScene.State.NO
 
     def add_component(self, component: ScalableComponent) -> None:
@@ -213,10 +197,8 @@ class ExtendedScene(QGraphicsView):
         :param event: mouse event.
         """
 
-        if self._state == ExtendedScene.State.CREATE:
-            self._handle_mouse_move_in_create_state(event)
-        elif self._state == ExtendedScene.State.RESIZE:
-            self._handle_mouse_move_in_resize_state(event)
+        if self._state in (ExtendedScene.State.CREATE, ExtendedScene.State.RESIZE):
+            self._current_component.resize_by_mouse(self.mapToScene(event.pos()))
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
