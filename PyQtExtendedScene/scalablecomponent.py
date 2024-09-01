@@ -36,7 +36,7 @@ class ScalableComponent(QGraphicsRectItem):
         """
         Enumerates the modes in which the component can be
         """
-        
+
         MOVE = auto()  # moving a component
         NO = auto()
         RESIZE_ANY = auto()
