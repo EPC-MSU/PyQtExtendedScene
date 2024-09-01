@@ -44,7 +44,7 @@ class ExtendedScene(QGraphicsView):
         self._components: List[ScalableComponent] = []
         self._current_component: Optional[ScalableComponent] = None
         self._drag_allowed: bool = True
-        self._start_pos: Optional[QPointF] = None
+        self._mouse_pos: QPointF = QPointF()
         self._state: ExtendedScene.State = ExtendedScene.State.NO
 
         self._scene: QGraphicsScene = QGraphicsScene()
@@ -62,6 +62,7 @@ class ExtendedScene(QGraphicsView):
         # For keyboard events
         self.setFocusPolicy(Qt.StrongFocus)
 
+        self._copied_items: List[ScalableComponent] = []
         self._copy_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self)
         self._copy_shortcut.setContext(Qt.WindowShortcut)
         self._copy_shortcut.activated.connect(self._copy_components)
@@ -74,6 +75,7 @@ class ExtendedScene(QGraphicsView):
 
     def _copy_components(self) -> None:
         print("____copy")
+        self._copied_items = [item.copy() for item in self._scene.selectedItems() if isinstance(item, ScalableComponent)]
 
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[ScalableComponent]:
         """
@@ -164,7 +166,8 @@ class ExtendedScene(QGraphicsView):
         self._state = ExtendedScene.State.NO
 
     def _paste_components(self) -> None:
-        print("____paste")
+        print(self._scene.selectionArea().currentPosition())
+        self.remove_all_selections()
 
     def add_component(self, component: ScalableComponent) -> None:
         """
@@ -211,6 +214,7 @@ class ExtendedScene(QGraphicsView):
         :param event: mouse event.
         """
 
+        self._mouse_pos = event.pos()
         if self._state in (ExtendedScene.State.CREATE_COMPONENT, ExtendedScene.State.RESIZE_COMPONENT):
             self._current_component.resize_by_mouse(self.mapToScene(event.pos()))
         super().mouseMoveEvent(event)
