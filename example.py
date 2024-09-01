@@ -59,8 +59,8 @@ if __name__ == "__main__":
     widget = ExtendedScene()
     widget.setBackgroundBrush(QBrush(QColor("white")))
 
-    n = 10
-    m = 10
+    n = 20
+    m = 20
     width = 50
     height = 50
     dx = 5
