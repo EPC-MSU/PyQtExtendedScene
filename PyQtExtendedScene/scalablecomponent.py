@@ -34,7 +34,7 @@ class ScalableComponent(QGraphicsRectItem):
 
     class Mode(Enum):
         """
-        Enumerates the modes in which the component can be
+        Enumerates the modes in which the component can be.
         """
 
         MOVE = auto()  # moving a component
@@ -48,6 +48,22 @@ class ScalableComponent(QGraphicsRectItem):
         RESIZE_RIGHT_BOTTOM = auto()
         RESIZE_RIGHT_TOP = auto()
         RESIZE_TOP = auto()  # resizing by moving the top side
+
+    class MousePosition(Enum):
+        """
+        Enumerating mouse positions on a component's boundary.
+        """
+
+        X_LEFT = auto()
+        X_MIDDLE = auto()
+        X_NEAR_LEFT = auto()
+        X_NEAR_RIGHT = auto()
+        X_RIGHT = auto()
+        Y_BOTTOM = auto()
+        Y_MIDDLE = auto()
+        Y_NEAR_BOTTOM = auto()
+        Y_NEAR_TOP = auto()
+        Y_TOP = auto()
 
     CURSORS = {Mode.MOVE: Qt.SizeAllCursor,
                Mode.NO: Qt.ArrowCursor,
@@ -156,56 +172,70 @@ class ScalableComponent(QGraphicsRectItem):
 
         x, y = pos.x(), pos.y()
         pen_width = self.pen().width()
-        left = self.rect().x()
-        width = self.rect().width()
-        right = self.rect().right()
-        top = self.rect().y()
-        height = self.rect().height()
-        bottom = self.rect().bottom()
+        left = self.boundingRect().x()
+        width = self.boundingRect().width()
+        right = self.boundingRect().right()
+        top = self.boundingRect().y()
+        height = self.boundingRect().height()
+        bottom = self.boundingRect().bottom()
 
-        if top <= y <= top + ScalableComponent.DIAG_PORTION * height:
-            if left - pen_width <= x <= left + pen_width / 2:
-                return ScalableComponent.Mode.RESIZE_LEFT_TOP
+        x_pos = None
+        if left <= x <= left + pen_width:
+            x_pos = ScalableComponent.MousePosition.X_LEFT
+        elif left <= x <= left + ScalableComponent.DIAG_PORTION * width:
+            x_pos = ScalableComponent.MousePosition.X_NEAR_LEFT
+        elif left + ScalableComponent.DIAG_PORTION * width < x < right - ScalableComponent.DIAG_PORTION * width:
+            x_pos = ScalableComponent.MousePosition.X_MIDDLE
+        elif right - pen_width <= x <= right:
+            x_pos = ScalableComponent.MousePosition.X_RIGHT
+        elif right - ScalableComponent.DIAG_PORTION * width <= x <= right:
+            x_pos = ScalableComponent.MousePosition.X_NEAR_RIGHT
 
-            if right - pen_width / 2 <= x <= right + pen_width:
-                return ScalableComponent.Mode.RESIZE_RIGHT_TOP
+        y_pos = None
+        if top <= y <= top + pen_width:
+            y_pos = ScalableComponent.MousePosition.Y_TOP
+        elif top <= y <= top + ScalableComponent.DIAG_PORTION * height:
+            y_pos = ScalableComponent.MousePosition.Y_NEAR_TOP
+        elif top + ScalableComponent.DIAG_PORTION * height < y < bottom - ScalableComponent.DIAG_PORTION * height:
+            y_pos = ScalableComponent.MousePosition.Y_MIDDLE
+        elif bottom - pen_width <= y <= bottom:
+            y_pos = ScalableComponent.MousePosition.Y_BOTTOM
+        elif bottom - ScalableComponent.DIAG_PORTION * height <= y <= bottom:
+            y_pos = ScalableComponent.MousePosition.Y_NEAR_BOTTOM
 
-        if top + ScalableComponent.DIAG_PORTION * height < y < bottom - ScalableComponent.DIAG_PORTION * height:
-            if left - pen_width <= x <= left + pen_width / 2:
-                return ScalableComponent.Mode.RESIZE_LEFT
-
-            if right - pen_width / 2 <= x <= right + pen_width:
-                return ScalableComponent.Mode.RESIZE_RIGHT
-
-        if bottom - ScalableComponent.DIAG_PORTION * height <= y <= bottom:
-            if left - pen_width <= x <= left + pen_width / 2:
-                return ScalableComponent.Mode.RESIZE_LEFT_BOTTOM
-
-            if right - pen_width / 2 <= x <= right + pen_width:
-                return ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM
-
-        if left <= x <= left + ScalableComponent.DIAG_PORTION * width:
-            if top - pen_width <= y <= top + pen_width / 2:
-                return ScalableComponent.Mode.RESIZE_LEFT_TOP
-
-            if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return ScalableComponent.Mode.RESIZE_LEFT_BOTTOM
-
-        if left + ScalableComponent.DIAG_PORTION * width < x < right - ScalableComponent.DIAG_PORTION * width:
-            if top - pen_width <= y <= top + pen_width / 2:
-                return ScalableComponent.Mode.RESIZE_TOP
-
-            if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return ScalableComponent.Mode.RESIZE_BOTTOM
-
-        if right - ScalableComponent.DIAG_PORTION * width <= x <= right:
-            if top - pen_width <= y <= top + pen_width / 2:
-                return ScalableComponent.Mode.RESIZE_RIGHT_TOP
-
-            if bottom - pen_width / 2 <= y <= bottom + pen_width:
-                return ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM
-
-        return ScalableComponent.Mode.NO
+        return {(ScalableComponent.MousePosition.X_LEFT, ScalableComponent.MousePosition.Y_NEAR_TOP):
+                ScalableComponent.Mode.RESIZE_LEFT_TOP,
+                (ScalableComponent.MousePosition.X_LEFT, ScalableComponent.MousePosition.Y_TOP):
+                ScalableComponent.Mode.RESIZE_LEFT_TOP,
+                (ScalableComponent.MousePosition.X_NEAR_LEFT, ScalableComponent.MousePosition.Y_TOP):
+                ScalableComponent.Mode.RESIZE_LEFT_TOP,
+                (ScalableComponent.MousePosition.X_MIDDLE, ScalableComponent.MousePosition.Y_TOP):
+                ScalableComponent.Mode.RESIZE_TOP,
+                (ScalableComponent.MousePosition.X_RIGHT, ScalableComponent.MousePosition.Y_NEAR_TOP):
+                ScalableComponent.Mode.RESIZE_RIGHT_TOP,
+                (ScalableComponent.MousePosition.X_RIGHT, ScalableComponent.MousePosition.Y_TOP):
+                ScalableComponent.Mode.RESIZE_RIGHT_TOP,
+                (ScalableComponent.MousePosition.X_NEAR_RIGHT, ScalableComponent.MousePosition.Y_TOP):
+                ScalableComponent.Mode.RESIZE_RIGHT_TOP,
+                (ScalableComponent.MousePosition.X_RIGHT, ScalableComponent.MousePosition.Y_MIDDLE):
+                ScalableComponent.Mode.RESIZE_RIGHT,
+                (ScalableComponent.MousePosition.X_RIGHT, ScalableComponent.MousePosition.Y_NEAR_BOTTOM):
+                ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM,
+                (ScalableComponent.MousePosition.X_RIGHT, ScalableComponent.MousePosition.Y_BOTTOM):
+                ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM,
+                (ScalableComponent.MousePosition.X_NEAR_RIGHT, ScalableComponent.MousePosition.Y_BOTTOM):
+                ScalableComponent.Mode.RESIZE_RIGHT_BOTTOM,
+                (ScalableComponent.MousePosition.X_MIDDLE, ScalableComponent.MousePosition.Y_BOTTOM):
+                ScalableComponent.Mode.RESIZE_BOTTOM,
+                (ScalableComponent.MousePosition.X_LEFT, ScalableComponent.MousePosition.Y_NEAR_BOTTOM):
+                ScalableComponent.Mode.RESIZE_LEFT_BOTTOM,
+                (ScalableComponent.MousePosition.X_LEFT, ScalableComponent.MousePosition.Y_BOTTOM):
+                ScalableComponent.Mode.RESIZE_LEFT_BOTTOM,
+                (ScalableComponent.MousePosition.X_NEAR_LEFT, ScalableComponent.MousePosition.Y_BOTTOM):
+                ScalableComponent.Mode.RESIZE_LEFT_BOTTOM,
+                (ScalableComponent.MousePosition.X_LEFT, ScalableComponent.MousePosition.Y_MIDDLE):
+                ScalableComponent.Mode.RESIZE_LEFT,
+                }.get((x_pos, y_pos), ScalableComponent.Mode.NO)
 
     @change_rect_and_pos
     def _resize_at_any_mode(self, pos: QPointF) -> Tuple[float, float]:
