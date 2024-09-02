@@ -1,10 +1,15 @@
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
-from PyQtExtendedScene import AbstractComponent, ExtendedScene
+
+
+try:
+    from PyQtExtendedScene import AbstractComponent, ExtendedScene
+except ImportError:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from PyQtExtendedScene import AbstractComponent, ExtendedScene
 
 
 # Let's describe our own component

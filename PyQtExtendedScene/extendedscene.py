@@ -90,7 +90,7 @@ class ExtendedScene(QGraphicsView):
         :param item: component clicked by mouse.
         """
 
-        if (isinstance(item, ScalableComponent) and item.isSelected() and 
+        if (isinstance(item, ScalableComponent) and item.isSelected() and
                 item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO)):
             item.setFlag(QGraphicsItem.ItemIsMovable, False)
             self._current_component = item

@@ -1,10 +1,15 @@
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtWidgets import QApplication
-from PyQtExtendedScene import ExtendedScene, ScalableComponent
+
+
+try:
+    from PyQtExtendedScene import ExtendedScene, ScalableComponent
+except ImportError:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from PyQtExtendedScene import ExtendedScene, ScalableComponent
 
 
 if __name__ == "__main__":
