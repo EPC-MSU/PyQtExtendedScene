@@ -316,6 +316,14 @@ class ScalableComponent(QGraphicsRectItem):
         elif self._mode == ScalableComponent.Mode.RESIZE_TOP:
             self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
+    def handle_selection(self, selected: bool = True) -> None:
+        """
+        :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is
+        unselected.
+        """
+
+        ...
+
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         self._mode = self._get_mode(event.pos())
         self._set_cursor()
@@ -342,16 +350,6 @@ class ScalableComponent(QGraphicsRectItem):
             self._resize_at_bottom_and_top_mode(pos)
         elif self._mode in (ScalableComponent.Mode.RESIZE_LEFT, ScalableComponent.Mode.RESIZE_RIGHT):
             self._resize_at_left_and_right_mode(pos)
-
-    def select(self, selected: bool = True) -> None:
-        """
-        :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is
-        unselected.
-        """
-
-        self.setSelected(selected)
-        pen = get_dashed_pen(self._solid_pen) if self.isSelected() else QPen(self._solid_pen)
-        super().setPen(pen)
 
     def setPen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> None:
         """

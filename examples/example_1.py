@@ -1,9 +1,10 @@
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
-from PyQtExtendedScene import AbstractComponent, ExtendedScene, ScalableComponent
+from PyQtExtendedScene import AbstractComponent, ExtendedScene
 
 
 # Let's describe our own component
@@ -40,8 +41,8 @@ class MyComponent(AbstractComponent):
 
         return self._descr
 
-    # We must override parent method "select" because our component changes shape when selected
-    def select(self, selected: bool = True) -> None:
+    # We must override parent method "handle_selection" because our component changes shape when selected
+    def handle_selection(self, selected: bool = True) -> None:
         # Radius of our circle changes when selected
         self._r = self.selected_size if selected else self.normal_size
         # redraw our object with new radius
@@ -55,25 +56,21 @@ def left_click(component: MyComponent) -> None:
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Open workspace background image
+    path_to_image = os.path.join("images", "workspace.png")
+    if not os.path.isfile(path_to_image):
+        path_to_image = QFileDialog().getOpenFileName(caption="Open workspace image",
+                                                      filter="Image Files (*.png *.jpg *.bmp *.tiff)")[0]
+
+    image = QPixmap(path_to_image)
+    image = image.scaled(800, 600)
     # Create workspace!
-    widget = ExtendedScene()
-    widget.setBackgroundBrush(QBrush(QColor("white")))
+    widget = ExtendedScene(image)
 
-    n = 20
-    m = 20
-    width = 50
-    height = 50
-    dx = 5
-    dy = 5
-    for i in range(n):
-        for j in range(m):
-            x = j * (width + dx)
-            y = i * (height + dy)
-            component = ScalableComponent(QRectF(0, 0, width, height))
-            component.setPos(x, y)
-            widget.add_component(component)
-
-    widget._scene.setSceneRect(QRectF(QPointF(-500, 500), QPointF(1500, 1500)))
+    # Let's add some components to our workspace
+    widget.add_component(MyComponent(10, 10, "My component 1"))
+    widget.add_component(MyComponent(100, 200, "My component 2"))
 
     # Handle left click
     widget.on_component_left_click.connect(left_click)

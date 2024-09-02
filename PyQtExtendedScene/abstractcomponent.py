@@ -1,6 +1,17 @@
-from PyQt5.QtCore import QRectF
+from PyQt5.QtCore import pyqtSignal, QObject, QRectF
 from PyQt5.QtGui import QPainter
-from PyQt5.QtWidgets import QGraphicsItem, QWidget
+from PyQt5.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+
+
+class Sender(QObject):
+
+    signal: pyqtSignal = pyqtSignal(bool)
+
+    def connect(self, func) -> None:
+        self.signal.connect(func)
+
+    def emit(self, value: bool) -> None:
+        self.signal.emit(value)
 
 
 class AbstractComponent(QGraphicsItem):
@@ -19,8 +30,12 @@ class AbstractComponent(QGraphicsItem):
         super().__init__()
         self._draggable: bool = draggable
         self._selectable: bool = selectable
-        self._selected: bool = False
+        self._selection_signal: Sender = Sender()
+        self._selection_signal.connect(self.handle_selection)
         self._unique_selection: bool = unique_selection
+
+        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
 
     @property
     def draggable(self) -> bool:
@@ -39,10 +54,6 @@ class AbstractComponent(QGraphicsItem):
         return self._selectable
 
     @property
-    def selected(self) -> bool:
-        return self._selected
-
-    @property
     def unique_selection(self) -> bool:
         """
         :return: True if selecting this component should reset all others selections.
@@ -58,27 +69,36 @@ class AbstractComponent(QGraphicsItem):
         # By default, bounding rect of our object is a bounding rect of children items
         return self.childrenBoundingRect()
 
-    def paint(self, painter: QPainter, option, widget: QWidget = None) -> None:
-        """
-        :param painter: painter;
-        :param option: style options for the component, such as its state, exposed area and its level-of-detail hints;
-        :param widget: widget argument is optional. If provided, it points to the widget that is being painted on;
-        otherwise, it is None.
-        """
-
-        pass
-
-    def select(self, selected: bool = True) -> None:
+    def handle_selection(self, selected: bool = True) -> None:
         """
         :param selected: if True, then set the component as selected.
         """
 
-        if self._selectable:
-            self._selected = selected
+        ...
+
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
+        """
+        :param change:
+        :param value:
+        """
+
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+            self._selection_signal.emit(value)
+
+        return super().itemChange(change, value)
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
+        """
+        :param painter:
+        :param option:
+        :param widget:
+        """
+
+        ...
 
     def update_scale(self, scale: float) -> None:
         """
         :param scale: new scale factor for component.
         """
 
-        pass
+        ...

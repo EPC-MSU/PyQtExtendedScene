@@ -41,9 +41,9 @@ class ExtendedScene(QGraphicsView):
         self._scale: float = 1.0
         self._zoom_speed: float = zoom_speed
 
-        self._components: List[ScalableComponent] = []
+        self._components: List[QGraphicsItem] = []
         self._copied_components: List[Tuple[ScalableComponent, QPointF]] = []
-        self._current_component: Optional[ScalableComponent] = None
+        self._current_component: Optional[QGraphicsItem] = None
         self._drag_allowed: bool = True
         self._mouse_pos: QPointF = QPointF()
         self._state: ExtendedScene.State = ExtendedScene.State.NO
@@ -73,24 +73,25 @@ class ExtendedScene(QGraphicsView):
         self._timer: QTimer = QTimer()
         self._timer.start(ExtendedScene.UPDATE_INTERVAL)
 
-    def _get_clicked_item(self, event: QMouseEvent) -> Optional[ScalableComponent]:
+    def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
         """
         :param event: mouse event.
         :return: a component that is located at the point specified by the mouse.
         """
 
         for item in self.items(event.pos()):
-            if isinstance(item, ScalableComponent):
+            if isinstance(item, (AbstractComponent, ScalableComponent)):
                 return item
 
         return None
 
-    def _handle_mouse_left_button_press(self, item: Optional[ScalableComponent]) -> None:
+    def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem]) -> None:
         """
         :param item: component clicked by mouse.
         """
 
-        if item and item.isSelected() and item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO):
+        if (isinstance(item, ScalableComponent) and item.isSelected() and 
+                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO)):
             item.setFlag(QGraphicsItem.ItemIsMovable, False)
             self._current_component = item
             self._current_component.fix_mode(item.mode)
@@ -116,9 +117,7 @@ class ExtendedScene(QGraphicsView):
         if self._state == ExtendedScene.State.DRAG_COMPONENT:
             if self._scene.selectedItems():
                 for item in self._scene.selectedItems():
-                    new_top_left = item.mapToScene(item.rect().topLeft())
-                    item.setPos(new_top_left)
-                self.on_component_moved.emit(self._scene.selectedItems()[0])
+                    self.on_component_moved.emit(item)
         elif self._state == ExtendedScene.State.RESIZE_COMPONENT:
             for item in self._scene.selectedItems():
                 item.setFlag(QGraphicsItem.ItemIsMovable, True)
@@ -134,7 +133,7 @@ class ExtendedScene(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO
 
-    def _handle_mouse_right_button_press(self, event: QMouseEvent, item: AbstractComponent) -> None:
+    def _handle_mouse_right_button_press(self, event: QMouseEvent, item: QGraphicsItem) -> None:
         """
         :param event: mouse event;
         :param item: component clicked by mouse.
@@ -161,7 +160,7 @@ class ExtendedScene(QGraphicsView):
             self._current_component = None
         self._state = ExtendedScene.State.NO
 
-    def add_component(self, component: ScalableComponent) -> None:
+    def add_component(self, component: QGraphicsItem) -> None:
         """
         :param component: component to be added to the scene.
         """
@@ -173,7 +172,7 @@ class ExtendedScene(QGraphicsView):
         if isinstance(component, ScalableComponent):
             self._timer.timeout.connect(component.update_selection)
 
-    def all_components(self, class_filter: type = object) -> List[AbstractComponent]:
+    def all_components(self, class_filter: type = object) -> List[QGraphicsItem]:
         """
         :param class_filter: filter for components on scene.
         :return: list of components that match a given filter.
@@ -258,13 +257,13 @@ class ExtendedScene(QGraphicsView):
             new_item_y = self._mouse_pos.y() + item_pos.y() - top
             item_to_paste.setPos(new_item_x, new_item_y)
             self.add_component(item_to_paste)
-            item_to_paste.select()
+            item_to_paste.setSelected(True)
 
     def remove_all_selections(self) -> None:
         for item in self._components:
-            item.select(False)
+            item.setSelected(False)
 
-    def remove_component(self, component: ScalableComponent) -> None:
+    def remove_component(self, component: QGraphicsItem) -> None:
         """
         :param component: component to be removed from the scene.
         """
