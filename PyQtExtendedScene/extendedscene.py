@@ -1,5 +1,5 @@
 from enum import auto, Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
@@ -42,6 +42,7 @@ class ExtendedScene(QGraphicsView):
         self._zoom_speed: float = zoom_speed
 
         self._components: List[ScalableComponent] = []
+        self._copied_components: List[Tuple[ScalableComponent, QPointF]] = []
         self._current_component: Optional[ScalableComponent] = None
         self._drag_allowed: bool = True
         self._mouse_pos: QPointF = QPointF()
@@ -62,20 +63,15 @@ class ExtendedScene(QGraphicsView):
         # For keyboard events
         self.setFocusPolicy(Qt.StrongFocus)
 
-        self._copied_items: List[ScalableComponent] = []
         self._copy_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self)
         self._copy_shortcut.setContext(Qt.WindowShortcut)
-        self._copy_shortcut.activated.connect(self._copy_components)
+        self._copy_shortcut.activated.connect(self.copy_selected_components)
         self._paste_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self)
         self._paste_shortcut.setContext(Qt.WindowShortcut)
-        self._paste_shortcut.activated.connect(self._paste_components)
+        self._paste_shortcut.activated.connect(self.paste_copied_components)
 
         self._timer: QTimer = QTimer()
         self._timer.start(ExtendedScene.UPDATE_INTERVAL)
-
-    def _copy_components(self) -> None:
-        print("____copy")
-        self._copied_items = [item.copy() for item in self._scene.selectedItems() if isinstance(item, ScalableComponent)]
 
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[ScalableComponent]:
         """
@@ -165,10 +161,6 @@ class ExtendedScene(QGraphicsView):
             self._current_component = None
         self._state = ExtendedScene.State.NO
 
-    def _paste_components(self) -> None:
-        print(self._scene.selectionArea().currentPosition())
-        self.remove_all_selections()
-
     def add_component(self, component: ScalableComponent) -> None:
         """
         :param component: component to be added to the scene.
@@ -202,6 +194,10 @@ class ExtendedScene(QGraphicsView):
         self._background = None
         self.resetTransform()
 
+    def copy_selected_components(self) -> None:
+        self._copied_components = [item.copy() for item in self._scene.selectedItems()
+                                   if isinstance(item, ScalableComponent)]
+
     def is_drag_allowed(self) -> bool:
         """
         :return: if True, then components are allowed to be moved around the scene.
@@ -214,9 +210,9 @@ class ExtendedScene(QGraphicsView):
         :param event: mouse event.
         """
 
-        self._mouse_pos = event.pos()
+        self._mouse_pos = self.mapToScene(event.pos())
         if self._state in (ExtendedScene.State.CREATE_COMPONENT, ExtendedScene.State.RESIZE_COMPONENT):
-            self._current_component.resize_by_mouse(self.mapToScene(event.pos()))
+            self._current_component.resize_by_mouse(self._mouse_pos)
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -245,6 +241,24 @@ class ExtendedScene(QGraphicsView):
         elif event.button() == Qt.RightButton:
             self._handle_mouse_right_button_release()
         super().mouseReleaseEvent(event)
+
+    def paste_copied_components(self) -> None:
+        self.remove_all_selections()
+        left, top = None, None
+        for item, item_pos in self._copied_components:
+            item_x, item_y = item_pos.x(), item_pos.y()
+            if left is None or left > item_x:
+                left = item_x
+            if top is None or top > item_y:
+                top = item_y
+
+        for item, item_pos in self._copied_components:
+            item_to_paste = item.copy()[0]
+            new_item_x = self._mouse_pos.x() + item_pos.x() - left
+            new_item_y = self._mouse_pos.y() + item_pos.y() - top
+            item_to_paste.setPos(new_item_x, new_item_y)
+            self.add_component(item_to_paste)
+            item_to_paste.select()
 
     def remove_all_selections(self) -> None:
         for item in self._components:

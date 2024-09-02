@@ -250,17 +250,16 @@ class ScalableComponent(QGraphicsRectItem):
 
         return self.rect().width() >= ScalableComponent.MIN_SIZE and self.rect().height() >= ScalableComponent.MIN_SIZE
 
-    def copy(self) -> "ScalableComponent":
+    def copy(self) -> Tuple["ScalableComponent", QPointF]:
         """
-        :return: copied component.
+        :return: copied component and its current position.
         """
 
         pen_color = self._solid_pen.color()
         pen_width = self._solid_pen.widthF()
         component = ScalableComponent(QRectF(self.rect()), pen_color, pen_width, self.draggable, self.selectable,
                                       self.unique_selection)
-        component.setPos(self.pos())
-        return component
+        return component, self.pos()
 
     def fix_mode(self, mode: Mode) -> None:
         """
