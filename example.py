@@ -72,6 +72,8 @@ if __name__ == "__main__":
             component = ScalableComponent(QRectF(0, 0, width, height))
             component.setPos(x, y)
             widget.add_component(component)
+    
+    widget._scene.setSceneRect(QRectF(QPointF(-500, 500), QPointF(1500, 1500)))
 
     # Handle left click
     widget.on_component_left_click.connect(left_click)
