@@ -1,7 +1,7 @@
 import os
 import sys
-from PyQt5.QtCore import QPointF, QRectF
-from PyQt5.QtGui import QBrush, QColor
+from PyQt5.QtCore import QRectF
+from PyQt5.QtGui import QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import QApplication
 
 
@@ -14,8 +14,17 @@ except ImportError:
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Open workspace background image
+    path_to_image = os.path.join("images", "workspace.png")
+    if os.path.isfile(path_to_image):
+        image = QPixmap(path_to_image)
+        image = image.scaled(800, 600)
+    else:
+        image = None
+
     # Create workspace!
-    widget = ExtendedScene()
+    widget = ExtendedScene(image)
     widget.setBackgroundBrush(QBrush(QColor("white")))
 
     point_component = PointComponent(4)
@@ -24,19 +33,22 @@ if __name__ == "__main__":
     widget.add_component(point_component)
 
     rect_component = ScalableComponent(QRectF(0, 0, 100, 150))
-    rect_component.setPos(10, 20)
-    rect_component.setBrush(QBrush(QColor("green")))
+    rect_component.setPos(100, 100)
+    rect_component.setBrush(QBrush(QColor("red")))
     widget.add_component(rect_component)
 
-    another_point_component = PointComponent(6)
-    another_point_component.setBrush(QBrush(QColor("purple")))
-    another_point_component.setPos(200, 300)
+    point_component_for_group = PointComponent(4)
+    point_component_for_group.setBrush(QBrush(QColor("green")))
+    point_component_for_group.setPos(400, 300)
+
+    rect_component_for_group = ScalableComponent(QRectF(0, 0, 200, 100))
+    rect_component_for_group.setBrush(QBrush(QColor("green")))
+    rect_component_for_group.setPos(400, 100)
 
     group = ComponentGroup()
-    group.addToGroup(another_point_component)
+    group.addToGroup(point_component_for_group)
+    group.addToGroup(rect_component_for_group)
     widget.add_component(group)
-
-    widget._scene.setSceneRect(QRectF(QPointF(-500, -500), QPointF(1500, 1500)))
 
     widget.show()
     sys.exit(app.exec_())
