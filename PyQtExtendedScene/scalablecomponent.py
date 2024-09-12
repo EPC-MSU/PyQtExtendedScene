@@ -294,6 +294,7 @@ class ScalableComponent(QGraphicsRectItem):
         pen_width = self._solid_pen.widthF()
         component = ScalableComponent(QRectF(self.rect()), pen_color, pen_width, self.draggable, self.selectable,
                                       self.unique_selection)
+        component.setBrush(self.brush())
         return component, self.pos()
 
     def fix_mode(self, mode: Mode) -> None:
