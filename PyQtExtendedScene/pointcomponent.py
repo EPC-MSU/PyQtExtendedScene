@@ -37,6 +37,7 @@ class PointComponent(QGraphicsEllipseItem):
         self._mode: PointComponent.Mode = PointComponent.Mode.NO
         self._r: Optional[float] = r
         self._r_selected: Optional[float] = r_selected
+        self._scale_factor: float = 1
         self._selectable: bool = selectable
         self._selection_signal: Sender = Sender()
         self._selection_signal.connect(self.handle_selection)
@@ -47,7 +48,15 @@ class PointComponent(QGraphicsEllipseItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
 
         self.setPen(pen)
+        self._set_rect(r)
+
+    def _set_rect(self, r: Optional[float]) -> None:
+        """
+        :param r: point radius.
+        """
+
         if r is not None:
+            r /= self._scale_factor
             self.setRect(-r, -r, 2 * r, 2 * r)
 
     def handle_selection(self, selected: bool = True) -> None:
@@ -56,9 +65,7 @@ class PointComponent(QGraphicsEllipseItem):
         unselected.
         """
 
-        r = self._r_selected if selected else self._r
-        if r is not None:
-            self.setRect(-r, -r, 2 * r, 2 * r)
+        self._set_rect(self._r_selected if selected else self._r)
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """
@@ -93,10 +100,10 @@ class PointComponent(QGraphicsEllipseItem):
         pen.setCosmetic(True)
         super().setPen(pen)
 
-    @staticmethod
-    def update_scale(scale_factor: float) -> None:
+    def update_scale(self, scale_factor: float) -> None:
         """
         :param scale_factor: new scale factor.
         """
 
-        ...
+        self._scale_factor = scale_factor
+        self._set_rect(self._r_selected if self.isSelected() else self._r)
