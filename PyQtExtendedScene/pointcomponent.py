@@ -41,6 +41,30 @@ class PointComponent(QGraphicsEllipseItem):
         self.setPen(pen)
         self._set_rect(r)
 
+    @property
+    def draggable(self) -> bool:
+        """
+        :return: True if component can be dragged.
+        """
+
+        return self._draggable
+
+    @property
+    def selectable(self) -> bool:
+        """
+        :return: True if component can be selected.
+        """
+
+        return self._selectable
+
+    @property
+    def unique_selection(self) -> bool:
+        """
+        :return: True if selecting this component should reset all others selections.
+        """
+
+        return self._unique_selection
+
     def _set_rect(self, r: Optional[float]) -> None:
         """
         :param r: point radius.

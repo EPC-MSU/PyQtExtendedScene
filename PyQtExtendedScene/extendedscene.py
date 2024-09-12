@@ -81,7 +81,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         for item in self.items(event.pos()):
-            if isinstance(item, (AbstractComponent, ScalableComponent)):
+            if isinstance(item, (AbstractComponent, PointComponent, ScalableComponent)):
                 return item
 
         return None
