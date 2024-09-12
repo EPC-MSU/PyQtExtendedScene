@@ -1,16 +1,31 @@
-from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QPainter
-from PyQt5.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+from enum import auto, Enum
+from typing import Optional
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QStyle, QStyleOptionGraphicsItem, QWidget
 from .sender import Sender
 
 
-class AbstractComponent(QGraphicsItem):
+class PointComponent(QGraphicsEllipseItem):
     """
-    Abstract component for extended scene.
+    Point component that can be drawn and moved.
     """
 
-    def __init__(self, draggable: bool = True, selectable: bool = True, unique_selection: bool = True) -> None:
+    class Mode(Enum):
         """
+        Enumerates the modes in which the component can be.
+        """
+
+        MOVE = auto()  # moving a component
+        NO = auto()
+
+    PEN_COLOR: QColor = QColor("#0047AB")
+    PEN_WIDTH: float = 2
+
+    def __init__(self, r: Optional[float] = None, r_selected: Optional[float] = None, pen: Optional[QPen] = None,
+                 draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
+        """
+        :param r: point radius;
+        :param pen: pen;
         :param draggable: True if component can be dragged;
         :param selectable: True if component can be selected;
         :param unique_selection: True if selecting this component should reset all others selections
@@ -19,45 +34,21 @@ class AbstractComponent(QGraphicsItem):
 
         super().__init__()
         self._draggable: bool = draggable
+        self._mode: PointComponent.Mode = PointComponent.Mode.NO
+        self._r: Optional[float] = r
+        self._r_selected: Optional[float] = r_selected
         self._selectable: bool = selectable
         self._selection_signal: Sender = Sender()
         self._selection_signal.connect(self.handle_selection)
         self._unique_selection: bool = unique_selection
 
+        self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
         self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
 
-    @property
-    def draggable(self) -> bool:
-        """
-        :return: True if component can be dragged.
-        """
-
-        return self._draggable
-
-    @property
-    def selectable(self) -> bool:
-        """
-        :return: True if component can be selected.
-        """
-
-        return self._selectable
-
-    @property
-    def unique_selection(self) -> bool:
-        """
-        :return: True if selecting this component should reset all others selections.
-        """
-
-        return self._unique_selection
-
-    def boundingRect(self) -> QRectF:
-        """
-        :return: the outer bounds of the component as a rectangle.
-        """
-
-        # By default, bounding rect of our object is a bounding rect of children items
-        return self.childrenBoundingRect()
+        self.setPen(pen)
+        if r is not None:
+            self.setRect(-r, -r, 2 * r, 2 * r)
 
     def handle_selection(self, selected: bool = True) -> None:
         """
@@ -65,7 +56,9 @@ class AbstractComponent(QGraphicsItem):
         unselected.
         """
 
-        ...
+        r = self._r_selected if selected else self._r
+        if r is not None:
+            self.setRect(-r, -r, 2 * r, 2 * r)
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """
@@ -87,9 +80,21 @@ class AbstractComponent(QGraphicsItem):
         otherwise, it is 0. For cached painting, widget is always 0.
         """
 
-        ...
+        if option.state & QStyle.State_Selected:
+            option.state &= not QStyle.State_Selected
+        super().paint(painter, option, widget)
 
-    def update_scale(self, scale_factor: float) -> None:
+    def setPen(self, pen: Optional[QPen] = None) -> None:
+        """
+        :param pen: pen.
+        """
+
+        pen = QPen(pen or QPen(QBrush(PointComponent.PEN_COLOR), PointComponent.PEN_WIDTH))
+        pen.setCosmetic(True)
+        super().setPen(pen)
+
+    @staticmethod
+    def update_scale(scale_factor: float) -> None:
         """
         :param scale_factor: new scale factor.
         """

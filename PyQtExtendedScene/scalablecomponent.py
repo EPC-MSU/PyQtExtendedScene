@@ -5,6 +5,7 @@ from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
                              QStyleOptionGraphicsItem, QWidget)
+from .sender import Sender
 
 
 def change_rect_and_pos(func: Callable[[QPointF], Tuple[float, float]]):
@@ -97,6 +98,8 @@ class ScalableComponent(QGraphicsRectItem):
         self._draggable: bool = draggable
         self._mode: ScalableComponent.Mode = ScalableComponent.Mode.NO
         self._selectable: bool = selectable
+        self._selection_signal: Sender = Sender()
+        self._selection_signal.connect(self.handle_selection)
         self._solid_pen: QPen = QPen()
         self._unique_selection: bool = unique_selection
         self._x_fixed: Optional[float] = None
@@ -333,6 +336,17 @@ class ScalableComponent(QGraphicsRectItem):
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         self._mode = self._get_mode(event.pos())
         self._set_cursor()
+
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
+        """
+        :param change: the parameter of the item that is changing;
+        :param value: the new value, the type of the value depends on change.
+        """
+
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+            self._selection_signal.emit(value)
+
+        return super().itemChange(change, value)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """
