@@ -292,8 +292,8 @@ class ScalableComponent(QGraphicsRectItem):
 
         pen_color = self._solid_pen.color()
         pen_width = self._solid_pen.widthF()
-        component = ScalableComponent(QRectF(self.rect()), pen_color, pen_width, self.draggable, self.selectable,
-                                      self.unique_selection)
+        component = ScalableComponent(QRectF(self.rect()), pen_color, pen_width, self._draggable, self._selectable,
+                                      self._unique_selection)
         component.setBrush(self.brush())
         return component, self.pos()
 

@@ -5,6 +5,7 @@ from PyQt5.QtGui import QBrush, QColor, QKeySequence, QMouseEvent, QPixmap, QWhe
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from .abstractcomponent import AbstractComponent
 from .scalablecomponent import ScalableComponent
+from .pointcomponent import PointComponent
 
 
 class ExtendedScene(QGraphicsView):
@@ -195,7 +196,7 @@ class ExtendedScene(QGraphicsView):
 
     def copy_selected_components(self) -> None:
         self._copied_components = [item.copy() for item in self._scene.selectedItems()
-                                   if isinstance(item, ScalableComponent)]
+                                   if isinstance(item, (PointComponent, ScalableComponent))]
 
     def is_drag_allowed(self) -> bool:
         """

@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, Tuple
+from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QStyle, QStyleOptionGraphicsItem, QWidget
 from .sender import Sender
@@ -48,6 +49,16 @@ class PointComponent(QGraphicsEllipseItem):
         if r is not None:
             r /= self._scale_factor
             self.setRect(-r, -r, 2 * r, 2 * r)
+
+    def copy(self) -> Tuple["PointComponent", QPointF]:
+        """
+        :return: copied component and its current position.
+        """
+
+        component = PointComponent(self._r, self._r_selected, self.pen(), self._draggable, self._selectable,
+                                   self._unique_selection)
+        component.setBrush(self.brush())
+        return component, self.pos()
 
     def handle_selection(self, selected: bool = True) -> None:
         """
