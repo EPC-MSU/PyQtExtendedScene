@@ -78,8 +78,8 @@ class AbstractComponent(QGraphicsItem):
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """
-        :param change:
-        :param value:
+        :param change: the parameter of the item that is changing;
+        :param value: the new value, the type of the value depends on change.
         """
 
         if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
@@ -89,16 +89,18 @@ class AbstractComponent(QGraphicsItem):
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """
-        :param painter:
-        :param option:
-        :param widget:
+        :param painter: painter;
+        :param option: option parameter provides style options for the item, such as its state, exposed area and its
+        level-of-detail hints;
+        :param widget: this argument is optional. If provided, it points to the widget that is being painted on;
+        otherwise, it is 0. For cached painting, widget is always 0.
         """
 
         ...
 
-    def update_scale(self, scale: float) -> None:
+    def update_scale(self, scale_factor: float) -> None:
         """
-        :param scale: new scale factor for component.
+        :param scale_factor: new scale factor.
         """
 
         ...

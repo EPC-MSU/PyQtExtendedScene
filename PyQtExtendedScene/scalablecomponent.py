@@ -151,7 +151,9 @@ class ScalableComponent(QGraphicsRectItem):
 
         color = color or ScalableComponent.PEN_COLOR
         width = width or ScalableComponent.PEN_WIDTH
-        return QPen(QBrush(color), width)
+        pen = QPen(QBrush(color), width)
+        pen.setCosmetic(True)
+        return pen
 
     def _get_mode(self, pos: QPointF) -> Mode:
         """
@@ -333,6 +335,14 @@ class ScalableComponent(QGraphicsRectItem):
         self._set_cursor()
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
+        """
+        :param painter: painter;
+        :param option: option parameter provides style options for the item, such as its state, exposed area and its
+        level-of-detail hints;
+        :param widget: this argument is optional. If provided, it points to the widget that is being painted on;
+        otherwise, it is 0. For cached painting, widget is always 0.
+        """
+
         if option.state & QStyle.State_Selected:
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
@@ -361,9 +371,9 @@ class ScalableComponent(QGraphicsRectItem):
         super().setPen(QPen(self._solid_pen))
 
     @staticmethod
-    def update_scale(scale: float) -> None:
+    def update_scale(scale_factor: float) -> None:
         """
-        :param scale: new scale.
+        :param scale_factor: new scale factor.
         """
 
         ...
