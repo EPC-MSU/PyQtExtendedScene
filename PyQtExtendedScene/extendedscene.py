@@ -4,8 +4,8 @@ from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from .abstractcomponent import AbstractComponent
+from .basecomponent import BaseComponent
 from .scalablecomponent import ScalableComponent
-from .pointcomponent import PointComponent
 
 
 class ExtendedScene(QGraphicsView):
@@ -43,7 +43,7 @@ class ExtendedScene(QGraphicsView):
         self._zoom_speed: float = zoom_speed
 
         self._components: List[QGraphicsItem] = []
-        self._copied_components: List[Tuple[ScalableComponent, QPointF]] = []
+        self._copied_components: List[Tuple[BaseComponent, QPointF]] = []
         self._current_component: Optional[QGraphicsItem] = None
         self._drag_allowed: bool = True
         self._mouse_pos: QPointF = QPointF()
@@ -81,7 +81,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         for item in self.items(event.pos()):
-            if isinstance(item, (AbstractComponent, PointComponent, ScalableComponent)):
+            if isinstance(item, (AbstractComponent, BaseComponent)):
                 return item
 
         return None
@@ -196,7 +196,7 @@ class ExtendedScene(QGraphicsView):
 
     def copy_selected_components(self) -> None:
         self._copied_components = [item.copy() for item in self._scene.selectedItems()
-                                   if isinstance(item, (PointComponent, ScalableComponent))]
+                                   if isinstance(item, BaseComponent)]
 
     def is_drag_allowed(self) -> bool:
         """
