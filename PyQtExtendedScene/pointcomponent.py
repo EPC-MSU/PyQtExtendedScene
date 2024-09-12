@@ -1,4 +1,3 @@
-from enum import auto, Enum
 from typing import Optional
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QStyle, QStyleOptionGraphicsItem, QWidget
@@ -9,14 +8,6 @@ class PointComponent(QGraphicsEllipseItem):
     """
     Point component that can be drawn and moved.
     """
-
-    class Mode(Enum):
-        """
-        Enumerates the modes in which the component can be.
-        """
-
-        MOVE = auto()  # moving a component
-        NO = auto()
 
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
@@ -34,7 +25,6 @@ class PointComponent(QGraphicsEllipseItem):
 
         super().__init__()
         self._draggable: bool = draggable
-        self._mode: PointComponent.Mode = PointComponent.Mode.NO
         self._r: Optional[float] = r
         self._r_selected: Optional[float] = r_selected
         self._scale_factor: float = 1
