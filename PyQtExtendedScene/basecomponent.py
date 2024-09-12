@@ -1,15 +1,11 @@
-from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QPainter
-from PyQt5.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+from typing import Any
+from PyQt5.QtWidgets import QGraphicsItem
 from .sender import get_signal_sender
 
 
-class AbstractComponent(QGraphicsItem):
-    """
-    Abstract component for extended scene.
-    """
+class BaseComponent:
 
-    def __init__(self, draggable: bool = True, selectable: bool = True, unique_selection: bool = True) -> None:
+    def __init__(self, draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param draggable: True if component can be dragged;
         :param selectable: True if component can be selected;
@@ -24,8 +20,7 @@ class AbstractComponent(QGraphicsItem):
         self._selection_signal.connect(self.handle_selection)
         self._unique_selection: bool = unique_selection
 
-        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
+        self._set_flags()
 
     @property
     def draggable(self) -> bool:
@@ -51,13 +46,10 @@ class AbstractComponent(QGraphicsItem):
 
         return self._unique_selection
 
-    def boundingRect(self) -> QRectF:
-        """
-        :return: the outer bounds of the component as a rectangle.
-        """
-
-        # By default, bounding rect of our object is a bounding rect of children items
-        return self.childrenBoundingRect()
+    def _set_flags(self) -> None:
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
 
     def handle_selection(self, selected: bool = True) -> None:
         """
@@ -67,7 +59,7 @@ class AbstractComponent(QGraphicsItem):
 
         ...
 
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value) -> Any:
         """
         :param change: the parameter of the item that is changing;
         :param value: the new value, the type of the value depends on change.
@@ -76,20 +68,12 @@ class AbstractComponent(QGraphicsItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
             self._selection_signal.emit(value)
 
-        return super().itemChange(change, value)
+        for item_class in self.__class__.__bases__:
+            if item_class != BaseComponent:
+                return item_class().itemChange(change, value)
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
-        """
-        :param painter: painter;
-        :param option: option parameter provides style options for the item, such as its state, exposed area and its
-        level-of-detail hints;
-        :param widget: this argument is optional. If provided, it points to the widget that is being painted on;
-        otherwise, it is 0. For cached painting, widget is always 0.
-        """
-
-        ...
-
-    def update_scale(self, scale_factor: float) -> None:
+    @staticmethod
+    def update_scale(scale_factor: float) -> None:
         """
         :param scale_factor: new scale factor.
         """

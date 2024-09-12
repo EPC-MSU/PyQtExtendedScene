@@ -1,11 +1,11 @@
 from typing import Optional, Tuple
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QStyle, QStyleOptionGraphicsItem, QWidget
-from .sender import Sender
+from PyQt5.QtWidgets import QGraphicsEllipseItem, QStyle, QStyleOptionGraphicsItem, QWidget
+from .basecomponent import BaseComponent
 
 
-class PointComponent(QGraphicsEllipseItem):
+class PointComponent(QGraphicsEllipseItem, BaseComponent):
     """
     Point component that can be drawn and moved.
     """
@@ -24,46 +24,15 @@ class PointComponent(QGraphicsEllipseItem):
         ('selectable' must be set).
         """
 
-        super().__init__()
-        self._draggable: bool = draggable
+        QGraphicsEllipseItem.__init__(self)
+        BaseComponent.__init__(self, draggable, selectable, unique_selection)
+
         self._r: Optional[float] = r
         self._r_selected: Optional[float] = r_selected
         self._scale_factor: float = 1
-        self._selectable: bool = selectable
-        self._selection_signal: Sender = Sender()
-        self._selection_signal.connect(self.handle_selection)
-        self._unique_selection: bool = unique_selection
-
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
 
         self.setPen(pen)
         self._set_rect(r)
-
-    @property
-    def draggable(self) -> bool:
-        """
-        :return: True if component can be dragged.
-        """
-
-        return self._draggable
-
-    @property
-    def selectable(self) -> bool:
-        """
-        :return: True if component can be selected.
-        """
-
-        return self._selectable
-
-    @property
-    def unique_selection(self) -> bool:
-        """
-        :return: True if selecting this component should reset all others selections.
-        """
-
-        return self._unique_selection
 
     def _set_rect(self, r: Optional[float]) -> None:
         """
@@ -91,17 +60,6 @@ class PointComponent(QGraphicsEllipseItem):
         """
 
         self._set_rect(self._r_selected if selected else self._r)
-
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
-        """
-        :param change: the parameter of the item that is changing;
-        :param value: the new value, the type of the value depends on change.
-        """
-
-        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
-            self._selection_signal.emit(value)
-
-        return super().itemChange(change, value)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """

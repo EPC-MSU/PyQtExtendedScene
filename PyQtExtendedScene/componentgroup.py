@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup
+from .basecomponent import BaseComponent
+from .sender import get_signal_sender
 
 
-class ComponentGroup(QGraphicsItemGroup):
+class ComponentGroup(QGraphicsItemGroup, BaseComponent):
     """
     Class for combining components into a group.
     """
@@ -14,42 +16,24 @@ class ComponentGroup(QGraphicsItemGroup):
         ('selectable' must be set).
         """
 
-        super().__init__()
-        self._draggable: bool = draggable
-        self._selectable: bool = selectable
-        self._unique_selection: bool = unique_selection
+        QGraphicsItemGroup.__init__(self)
+        BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
+        self._scale_changed = get_signal_sender(float)()
 
-    @property
-    def draggable(self) -> bool:
+    def addToGroup(self, item: QGraphicsItem) -> None:
         """
-        :return: True if component can be dragged.
+        :param item:
         """
 
-        return self._draggable
+        if hasattr(item, "update_scale"):
+            self._scale_changed.connect(item.update_scale)
 
-    @property
-    def selectable(self) -> bool:
-        """
-        :return: True if component can be selected.
-        """
-
-        return self._selectable
-
-    @property
-    def unique_selection(self) -> bool:
-        """
-        :return: True if selecting this component should reset all others selections.
-        """
-
-        return self._unique_selection
+        super().addToGroup(item)
 
     def update_scale(self, scale_factor: float) -> None:
         """
         :param scale_factor: new scale factor.
         """
 
-        pass
+        self._scale_changed.emit(scale_factor)

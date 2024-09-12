@@ -3,9 +3,8 @@ from enum import auto, Enum
 from typing import Callable, Optional, Tuple
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
-                             QStyleOptionGraphicsItem, QWidget)
-from .sender import Sender
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle, QStyleOptionGraphicsItem, QWidget
+from .basecomponent import BaseComponent
 
 
 def change_rect_and_pos(func: Callable[[QPointF], Tuple[float, float]]):
@@ -28,7 +27,7 @@ def change_rect_and_pos(func: Callable[[QPointF], Tuple[float, float]]):
     return wrapper
 
 
-class ScalableComponent(QGraphicsRectItem):
+class ScalableComponent(QGraphicsRectItem, BaseComponent):
     """
     Rectangular component that can be drawn with the mouse and resized.
     """
@@ -94,31 +93,17 @@ class ScalableComponent(QGraphicsRectItem):
         ('selectable' must be set).
         """
 
-        super().__init__()
-        self._draggable: bool = draggable
+        QGraphicsRectItem.__init__(self)
+        BaseComponent.__init__(self, draggable, selectable, unique_selection)
+
         self._mode: ScalableComponent.Mode = ScalableComponent.Mode.NO
-        self._selectable: bool = selectable
-        self._selection_signal: Sender = Sender()
-        self._selection_signal.connect(self.handle_selection)
         self._solid_pen: QPen = QPen()
-        self._unique_selection: bool = unique_selection
         self._x_fixed: Optional[float] = None
         self._y_fixed: Optional[float] = None
 
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, selectable)
         self.setPen(pen_color, pen_width)
         if rect is not None:
             self.setRect(rect)
-
-    @property
-    def draggable(self) -> bool:
-        """
-        :return: True if component can be dragged.
-        """
-
-        return self._draggable
 
     @property
     def mode(self) -> "Mode":
@@ -127,22 +112,6 @@ class ScalableComponent(QGraphicsRectItem):
         """
 
         return self._mode
-
-    @property
-    def selectable(self) -> bool:
-        """
-        :return: True if component can be selected.
-        """
-
-        return self._selectable
-
-    @property
-    def unique_selection(self) -> bool:
-        """
-        :return: True if selecting this component should reset all others selections.
-        """
-
-        return self._unique_selection
 
     @staticmethod
     def _create_solid_pen(color: Optional[QColor] = None, width: Optional[float] = None) -> QPen:
@@ -322,14 +291,6 @@ class ScalableComponent(QGraphicsRectItem):
         elif self._mode == ScalableComponent.Mode.RESIZE_TOP:
             self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
-    def handle_selection(self, selected: bool = True) -> None:
-        """
-        :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is
-        unselected.
-        """
-
-        ...
-
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         self._mode = self._get_mode(event.pos())
         self._set_cursor()
@@ -337,17 +298,6 @@ class ScalableComponent(QGraphicsRectItem):
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         self._mode = self._get_mode(event.pos())
         self._set_cursor()
-
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
-        """
-        :param change: the parameter of the item that is changing;
-        :param value: the new value, the type of the value depends on change.
-        """
-
-        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
-            self._selection_signal.emit(value)
-
-        return super().itemChange(change, value)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """
@@ -384,14 +334,6 @@ class ScalableComponent(QGraphicsRectItem):
 
         self._solid_pen = self._create_solid_pen(color, width)
         super().setPen(QPen(self._solid_pen))
-
-    @staticmethod
-    def update_scale(scale_factor: float) -> None:
-        """
-        :param scale_factor: new scale factor.
-        """
-
-        ...
 
     def update_selection(self) -> None:
         if self.isSelected():
