@@ -10,11 +10,12 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     Point component that can be drawn and moved.
     """
 
+    INCREASE_FACTOR: float = 2
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
 
-    def __init__(self, r: Optional[float] = None, r_selected: Optional[float] = None, pen: Optional[QPen] = None,
-                 draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
+    def __init__(self, r: Optional[float] = None, pen: Optional[QPen] = None, draggable: bool = True,
+                 selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param r: point radius;
         :param pen: pen;
@@ -28,7 +29,6 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
         self._r: Optional[float] = r
-        self._r_selected: Optional[float] = r_selected
         self._scale_factor: float = 1
 
         self.setPen(pen)
@@ -48,8 +48,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :return: copied component and its current position.
         """
 
-        component = PointComponent(self._r, self._r_selected, self.pen(), self._draggable, self._selectable,
-                                   self._unique_selection)
+        component = PointComponent(self._r, self.pen(), self._draggable, self._selectable, self._unique_selection)
         component.setBrush(self.brush())
         return component, self.pos()
 
@@ -59,7 +58,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         unselected.
         """
 
-        self._set_rect(self._r_selected if selected else self._r)
+        self._set_rect(self._r * PointComponent.INCREASE_FACTOR if self._r is not None and selected else self._r)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """

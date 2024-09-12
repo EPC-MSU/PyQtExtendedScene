@@ -18,7 +18,7 @@ if __name__ == "__main__":
     widget = ExtendedScene()
     widget.setBackgroundBrush(QBrush(QColor("white")))
 
-    point_component = PointComponent(4, 8)
+    point_component = PointComponent(4)
     point_component.setBrush(QBrush(QColor("red")))
     point_component.setPos(100, 300)
     widget.add_component(point_component)
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     rect_component.setBrush(QBrush(QColor("green")))
     widget.add_component(rect_component)
 
-    another_point_component = PointComponent(6, 10)
+    another_point_component = PointComponent(6)
     another_point_component.setBrush(QBrush(QColor("purple")))
     another_point_component.setPos(200, 300)
 
