@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphic
 from . import utils as ut
 from .abstractcomponent import AbstractComponent
 from .basecomponent import BaseComponent
+from .componentgroup import ComponentGroup
 from .scalablecomponent import ScalableComponent
 
 
@@ -72,8 +73,8 @@ class ExtendedScene(QGraphicsView):
         self._paste_shortcut.setContext(Qt.WindowShortcut)
         self._paste_shortcut.activated.connect(self.paste_copied_components)
 
-        self._timer: QTimer = QTimer()
-        self._timer.start(ExtendedScene.UPDATE_INTERVAL)
+        self._animation_timer: QTimer = QTimer()
+        self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
 
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
         """
@@ -172,7 +173,9 @@ class ExtendedScene(QGraphicsView):
         component.update_scale(self._scale)
         self.scale_changed.connect(component.update_scale)
         if isinstance(component, ScalableComponent):
-            self._timer.timeout.connect(component.update_selection)
+            self._animation_timer.timeout.connect(component.update_selection)
+        elif isinstance(component, ComponentGroup):
+            component.set_animation_timer(self._animation_timer)
 
     def all_components(self, class_filter: type = object) -> List[QGraphicsItem]:
         """
@@ -266,7 +269,7 @@ class ExtendedScene(QGraphicsView):
         self._scene.removeItem(component)
         self.scale_changed.disconnect(component.update_scale)
         if isinstance(component, ScalableComponent):
-            self._timer.timeout.disconnect(component.update_selection)
+            self._animation_timer.timeout.disconnect(component.update_selection)
 
     def scale_to_window_size(self, x: float, y: float) -> None:
         """

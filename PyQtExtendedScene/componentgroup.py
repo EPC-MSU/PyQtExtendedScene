@@ -1,8 +1,9 @@
-from typing import Tuple
-from PyQt5.QtCore import QPointF
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup
+from typing import Optional, Tuple
+from PyQt5.QtCore import QPointF, QTimer
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneMouseEvent
 from . import utils as ut
 from .basecomponent import BaseComponent
+from .scalablecomponent import ScalableComponent
 from .sender import get_signal_sender
 
 
@@ -22,6 +23,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         QGraphicsItemGroup.__init__(self)
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
+        self._animation_timer: Optional[QTimer] = None
         self._scale_changed = get_signal_sender(float)()
 
     def addToGroup(self, item: QGraphicsItem) -> None:
@@ -31,6 +33,9 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
         if hasattr(item, "update_scale"):
             self._scale_changed.connect(item.update_scale)
+
+        if self._animation_timer and isinstance(item, ScalableComponent):
+            self._animation_timer.timeout.connect(item.update_selection)
 
         super().addToGroup(item)
 
@@ -48,6 +53,41 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
                 component.addToGroup(copied_item)
                 points.append(pos)
         return component, QPointF(*ut.get_left_top_pos(points))
+
+    def handle_selection(self, selected: bool = True) -> None:
+        """
+        :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is
+        unselected.
+        """
+
+        if not selected:
+            for item in self.childItems():
+                item.set_selected_at_group(selected)
+
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        :param event: mouse event.
+        """
+
+        for item in self.childItems():
+            if item.contains(self.mapToItem(item, event.pos())):
+                item.set_selected_at_group(True)
+            elif item.is_selected():
+                item.set_selected_at_group(False)
+
+    def set_animation_timer(self, timer: QTimer) -> None:
+        """
+        :param timer: new timer for animation.
+        """
+
+        for item in self.childItems():
+            if isinstance(item, ScalableComponent):
+                if self._animation_timer:
+                    self._animation_timer.disconnect(item.update_selection)
+                if timer is not None:
+                    timer.timeout.connect(item.update_selection)
+
+        self._animation_timer = timer
 
     def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left: float, top: float) -> None:
         """

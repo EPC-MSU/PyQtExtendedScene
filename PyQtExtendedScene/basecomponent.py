@@ -28,6 +28,7 @@ class BaseComponent:
         super().__init__()
         self._draggable: bool = draggable
         self._selectable: bool = selectable
+        self._selected_at_group: bool = False
         self._selection_signal = get_signal_sender(bool)()
         self._selection_signal.connect(self.handle_selection)
         self._unique_selection: bool = unique_selection
@@ -71,6 +72,13 @@ class BaseComponent:
 
         ...
 
+    def is_selected(self) -> bool:
+        """
+        :return: True if the component is selected (by itself or within a group).
+        """
+
+        return self._selected_at_group if self.parentItem() else self.isSelected()
+
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value) -> Any:
         """
         :param change: the parameter of the item that is changing;
@@ -95,6 +103,14 @@ class BaseComponent:
         new_item_x = mouse_pos.x() + item_pos.x() - left
         new_item_y = mouse_pos.y() + item_pos.y() - top
         self.setPos(new_item_x, new_item_y)
+
+    def set_selected_at_group(self, selected: bool) -> None:
+        """
+        :param selected: True if the component is selected within a group.
+        """
+
+        self._selected_at_group = selected
+        self._selection_signal.emit(selected)
 
     def update_scale(self, scale_factor: float) -> None:
         """

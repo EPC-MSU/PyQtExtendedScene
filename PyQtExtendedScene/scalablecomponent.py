@@ -336,7 +336,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         super().setPen(QPen(self._solid_pen))
 
     def update_selection(self) -> None:
-        if self.isSelected():
+        if self.is_selected():
             super().setPen(get_dashed_pen(self._solid_pen))
         elif self.pen() != self._solid_pen:
             super().setPen(QPen(self._solid_pen))
