@@ -38,7 +38,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         """
 
         MOVE = auto()  # moving a component
-        NO = auto()
+        NO_ACTION = auto()
         RESIZE_ANY = auto()
         RESIZE_BOTTOM = auto()  # resizing by moving the bottom side
         RESIZE_LEFT = auto()  # resizing by moving the left side
@@ -66,7 +66,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         Y_TOP = auto()
 
     CURSORS = {Mode.MOVE: Qt.SizeAllCursor,
-               Mode.NO: Qt.ArrowCursor,
+               Mode.NO_ACTION: Qt.ArrowCursor,
                Mode.RESIZE_BOTTOM: Qt.SizeVerCursor,
                Mode.RESIZE_LEFT: Qt.SizeHorCursor,
                Mode.RESIZE_LEFT_BOTTOM: Qt.SizeBDiagCursor,
@@ -96,7 +96,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         QGraphicsRectItem.__init__(self)
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
-        self._mode: ScalableComponent.Mode = ScalableComponent.Mode.NO
+        self._mode: ScalableComponent.Mode = ScalableComponent.Mode.NO_ACTION
         self._solid_pen: QPen = QPen()
         self._x_fixed: Optional[float] = None
         self._y_fixed: Optional[float] = None
@@ -136,7 +136,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         if len(self.scene().selectedItems()) == 1 and self.isSelected():
             return self._get_mode_by_mouse_position(pos)
 
-        return ScalableComponent.Mode.NO
+        return ScalableComponent.Mode.NO_ACTION
 
     def _get_mode_by_mouse_position(self, pos: QPointF) -> Mode:
         """
@@ -209,7 +209,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
                 ScalableComponent.Mode.RESIZE_LEFT_BOTTOM,
                 (ScalableComponent.MousePosition.X_LEFT, ScalableComponent.MousePosition.Y_MIDDLE):
                 ScalableComponent.Mode.RESIZE_LEFT,
-                }.get((x_pos, y_pos), ScalableComponent.Mode.NO)
+                }.get((x_pos, y_pos), ScalableComponent.Mode.NO_ACTION)
 
     @change_rect_and_pos
     def _resize_at_any_mode(self, pos: QPointF) -> Tuple[float, float]:
@@ -264,7 +264,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         component = ScalableComponent(QRectF(self.rect()), pen_color, pen_width, self._draggable, self._selectable,
                                       self._unique_selection)
         component.setBrush(self.brush())
-        return component, self.pos()
+        return component, self.scenePos()
 
     def fix_mode(self, mode: Mode) -> None:
         """

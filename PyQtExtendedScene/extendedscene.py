@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
+from . import utils as ut
 from .abstractcomponent import AbstractComponent
 from .basecomponent import BaseComponent
 from .scalablecomponent import ScalableComponent
@@ -92,7 +93,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         if (isinstance(item, ScalableComponent) and item.isSelected() and
-                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO)):
+                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
             item.setFlag(QGraphicsItem.ItemIsMovable, False)
             self._current_component = item
             self._current_component.fix_mode(item.mode)
@@ -156,7 +157,7 @@ class ExtendedScene(QGraphicsView):
         if self._current_component:
             self._scene.removeItem(self._current_component)
             if self._current_component.check_big_enough():
-                self._current_component.fix_mode(ScalableComponent.Mode.NO)
+                self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
                 self.add_component(self._current_component)
             self._current_component = None
         self._state = ExtendedScene.State.NO
@@ -244,19 +245,11 @@ class ExtendedScene(QGraphicsView):
 
     def paste_copied_components(self) -> None:
         self.remove_all_selections()
-        left, top = None, None
-        for item, item_pos in self._copied_components:
-            item_x, item_y = item_pos.x(), item_pos.y()
-            if left is None or left > item_x:
-                left = item_x
-            if top is None or top > item_y:
-                top = item_y
+        left, top = ut.get_left_top_pos([pos for _, pos in self._copied_components])
 
         for item, item_pos in self._copied_components:
             item_to_paste = item.copy()[0]
-            new_item_x = self._mouse_pos.x() + item_pos.x() - left
-            new_item_y = self._mouse_pos.y() + item_pos.y() - top
-            item_to_paste.setPos(new_item_x, new_item_y)
+            item_to_paste.set_position_after_paste(self._mouse_pos, item_pos, left, top)
             self.add_component(item_to_paste)
             item_to_paste.setSelected(True)
 

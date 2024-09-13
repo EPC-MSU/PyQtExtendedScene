@@ -14,10 +14,10 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
 
-    def __init__(self, r: Optional[float] = None, pen: Optional[QPen] = None, draggable: bool = True,
+    def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, draggable: bool = True,
                  selectable: bool = True, unique_selection: bool = False) -> None:
         """
-        :param r: point radius;
+        :param radius: point radius;
         :param pen: pen;
         :param draggable: True if component can be dragged;
         :param selectable: True if component can be selected;
@@ -28,20 +28,20 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         QGraphicsEllipseItem.__init__(self)
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
-        self._r: Optional[float] = r
+        self._r: Optional[float] = radius
         self._scale_factor: float = 1
 
         self.setPen(pen)
-        self._set_rect(r)
+        self._set_rect(radius)
 
-    def _set_rect(self, r: Optional[float]) -> None:
+    def _set_rect(self, radius: Optional[float]) -> None:
         """
-        :param r: point radius.
+        :param radius: point radius.
         """
 
-        if r is not None:
-            r /= self._scale_factor
-            self.setRect(-r, -r, 2 * r, 2 * r)
+        if radius is not None:
+            radius /= self._scale_factor
+            self.setRect(-radius, -radius, 2 * radius, 2 * radius)
 
     def copy(self) -> Tuple["PointComponent", QPointF]:
         """
@@ -50,7 +50,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
 
         component = PointComponent(self._r, self.pen(), self._draggable, self._selectable, self._unique_selection)
         component.setBrush(self.brush())
-        return component, self.pos()
+        return component, self.scenePos()
 
     def handle_selection(self, selected: bool = True) -> None:
         """

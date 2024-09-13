@@ -1,4 +1,5 @@
 from typing import Any
+from PyQt5.QtCore import QPointF
 from PyQt5.QtWidgets import QGraphicsItem
 from .sender import get_signal_sender
 
@@ -82,6 +83,18 @@ class BaseComponent:
         for item_class in self.__class__.__bases__:
             if item_class != BaseComponent:
                 return item_class().itemChange(change, value)
+
+    def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left: float, top: float) -> None:
+        """
+        :param mouse_pos: mouse position;
+        :param item_pos: position of the component when copying;
+        :param left: x coordinate in the scene reference system that should be at the mouse position;
+        :param top: y coordinate in the scene reference system that should be at the mouse position.
+        """
+
+        new_item_x = mouse_pos.x() + item_pos.x() - left
+        new_item_y = mouse_pos.y() + item_pos.y() - top
+        self.setPos(new_item_x, new_item_y)
 
     def update_scale(self, scale_factor: float) -> None:
         """
