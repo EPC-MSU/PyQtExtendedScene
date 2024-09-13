@@ -4,6 +4,17 @@ from .sender import get_signal_sender
 
 
 class BaseComponent:
+    """
+    Base class for scene component classes. Contains general attributes. Should be used as a parent class paired with
+    some QGraphicsItem class.
+    For example:
+
+    class Rectangle(QGraphicsRectItem, BaseComponent):
+        ...
+
+    class Point(QGraphicsEllipseItem, BaseComponent):
+        ...
+    """
 
     def __init__(self, draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
         """
@@ -72,8 +83,7 @@ class BaseComponent:
             if item_class != BaseComponent:
                 return item_class().itemChange(change, value)
 
-    @staticmethod
-    def update_scale(scale_factor: float) -> None:
+    def update_scale(self, scale_factor: float) -> None:
         """
         :param scale_factor: new scale factor.
         """
