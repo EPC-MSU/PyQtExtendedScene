@@ -110,6 +110,9 @@ class ExtendedScene(QGraphicsView):
         if item and self._mode == SceneMode.EDIT and self._handle_mouse_left_button_press_in_edit_mode(item):
             return
 
+        if item:
+            return
+
         # We are in drag board mode now
         self.remove_all_selections()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
@@ -117,7 +120,7 @@ class ExtendedScene(QGraphicsView):
 
     def _handle_mouse_left_button_press_in_edit_mode(self, item: Optional[QGraphicsItem]) -> bool:
         """
-        :param item:
+        :param item: component clicked by mouse.
         :return:
         """
 
