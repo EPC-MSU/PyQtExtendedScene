@@ -5,6 +5,7 @@ from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle, QStyleOptionGraphicsItem, QWidget
 from .basecomponent import BaseComponent
+from .scenemode import SceneMode
 
 
 def change_rect_and_pos(func: Callable[[QPointF], Tuple[float, float]]):
@@ -133,7 +134,8 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         :return: mode.
         """
 
-        if len(self.scene().selectedItems()) == 1 and self.isSelected():
+        if self.is_selected() and (self._scene_mode == SceneMode.EDIT or
+                                   (self._scene_mode == SceneMode.EDIT_GROUP and self.parentItem())):
             return self._get_mode_by_mouse_position(pos)
 
         return ScalableComponent.Mode.NO_ACTION
@@ -292,10 +294,18 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
             self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """
+        :param event: hover event.
+        """
+
         self._mode = self._get_mode(event.pos())
         self._set_cursor()
 
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """
+        :param event: hover event.
+        """
+
         self._mode = self._get_mode(event.pos())
         self._set_cursor()
 

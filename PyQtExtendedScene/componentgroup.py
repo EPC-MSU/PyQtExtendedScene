@@ -1,9 +1,10 @@
 from typing import Optional, Tuple
 from PyQt5.QtCore import QPointF, QTimer
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneMouseEvent
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent
 from . import utils as ut
 from .basecomponent import BaseComponent
 from .scalablecomponent import ScalableComponent
+from .scenemode import SceneMode
 from .sender import get_signal_sender
 
 
@@ -25,6 +26,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
         self._animation_timer: Optional[QTimer] = None
         self._scale_changed = get_signal_sender(float)()
+        self._scene_mode_changed = get_signal_sender(SceneMode)()
 
     def addToGroup(self, item: QGraphicsItem) -> None:
         """
@@ -33,6 +35,9 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
         if hasattr(item, "update_scale"):
             self._scale_changed.connect(item.update_scale)
+
+        if hasattr(item, "set_scene_mode"):
+            self._scene_mode_changed.connect(item.set_scene_mode)
 
         if self._animation_timer and isinstance(item, ScalableComponent):
             self._animation_timer.timeout.connect(item.update_selection)
@@ -63,6 +68,15 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         if not selected:
             for item in self.childItems():
                 item.set_selected_at_group(selected)
+
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """
+        :param event: hover event.
+        """
+
+        for item in self.childItems():
+            if isinstance(item, ScalableComponent):
+                item.hoverEnterEvent(event)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -108,6 +122,14 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         for item in items:
             self.removeFromGroup(item)
             self.addToGroup(item)
+
+    def set_scene_mode(self, mode: SceneMode) -> None:
+        """
+        :param mode: new scene mode.
+        """
+
+        super().set_scene_mode(mode)
+        self._scene_mode_changed.emit(mode)
 
     def update_scale(self, scale_factor: float) -> None:
         """

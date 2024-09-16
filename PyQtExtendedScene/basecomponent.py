@@ -1,6 +1,7 @@
 from typing import Any
 from PyQt5.QtCore import QPointF
 from PyQt5.QtWidgets import QGraphicsItem
+from .scenemode import SceneMode
 from .sender import get_signal_sender
 
 
@@ -27,6 +28,7 @@ class BaseComponent:
 
         super().__init__()
         self._draggable: bool = draggable
+        self._scene_mode: SceneMode = SceneMode.NO_ACTION
         self._selectable: bool = selectable
         self._selected_at_group: bool = False
         self._selection_signal = get_signal_sender(bool)()
@@ -103,6 +105,13 @@ class BaseComponent:
         new_item_x = mouse_pos.x() + item_pos.x() - left
         new_item_y = mouse_pos.y() + item_pos.y() - top
         self.setPos(new_item_x, new_item_y)
+
+    def set_scene_mode(self, mode) -> None:
+        """
+        :param mode: new scene mode.
+        """
+
+        self._scene_mode = mode
 
     def set_selected_at_group(self, selected: bool) -> None:
         """

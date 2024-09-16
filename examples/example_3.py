@@ -7,9 +7,11 @@ from PyQt5.QtWidgets import QApplication
 
 try:
     from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, ScalableComponent
+    from PyQtExtendedScene.scenemode import SceneMode
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, ScalableComponent
+    from PyQtExtendedScene.scenemode import SceneMode
 
 
 if __name__ == "__main__":
@@ -49,6 +51,8 @@ if __name__ == "__main__":
     group.addToGroup(point_component_for_group)
     group.addToGroup(rect_component_for_group)
     widget.add_component(group)
+
+    widget.set_scene_mode(SceneMode.EDIT_GROUP)
 
     widget.show()
     sys.exit(app.exec_())

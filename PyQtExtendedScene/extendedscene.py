@@ -8,6 +8,7 @@ from .abstractcomponent import AbstractComponent
 from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
 from .scalablecomponent import ScalableComponent
+from .scenemode import SceneMode
 
 
 class ExtendedScene(QGraphicsView):
@@ -20,6 +21,7 @@ class ExtendedScene(QGraphicsView):
     on_middle_click: pyqtSignal = pyqtSignal()
     on_right_click: pyqtSignal = pyqtSignal(QPointF)
     scale_changed: pyqtSignal = pyqtSignal(float)
+    scene_mode_changed: pyqtSignal = pyqtSignal(SceneMode)
 
     class State(Enum):
         """
@@ -41,6 +43,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         super().__init__(parent)
+        self._mode: SceneMode = SceneMode.NO_ACTION
         self._scale: float = 1.0
         self._zoom_speed: float = zoom_speed
 
@@ -76,6 +79,14 @@ class ExtendedScene(QGraphicsView):
         self._animation_timer: QTimer = QTimer()
         self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
 
+    @property
+    def scene_mode(self) -> SceneMode:
+        """
+        :return: scene mode.
+        """
+
+        return self._mode
+
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
         """
         :param event: mouse event.
@@ -93,12 +104,7 @@ class ExtendedScene(QGraphicsView):
         :param item: component clicked by mouse.
         """
 
-        if (isinstance(item, ScalableComponent) and item.isSelected() and
-                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
-            item.setFlag(QGraphicsItem.ItemIsMovable, False)
-            self._current_component = item
-            self._current_component.fix_mode(item.mode)
-            self._state = ExtendedScene.State.RESIZE_COMPONENT
+        if self._mode == SceneMode.EDIT and self._handle_mouse_left_button_press_in_edit_mode(item):
             return
 
         if item:
@@ -113,6 +119,17 @@ class ExtendedScene(QGraphicsView):
         self.remove_all_selections()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self._state = ExtendedScene.State.DRAG
+
+    def _handle_mouse_left_button_press_in_edit_mode(self, item: Optional[QGraphicsItem]) -> bool:
+        if (isinstance(item, ScalableComponent) and item.isSelected() and
+                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
+            item.setFlag(QGraphicsItem.ItemIsMovable, False)
+            self._current_component = item
+            self._current_component.fix_mode(item.mode)
+            self._state = ExtendedScene.State.RESIZE_COMPONENT
+            return True
+
+        return False
 
     def _handle_mouse_left_button_release(self) -> None:
         self.setDragMode(QGraphicsView.NoDrag)
@@ -172,6 +189,8 @@ class ExtendedScene(QGraphicsView):
         self._scene.addItem(component)
         component.update_scale(self._scale)
         self.scale_changed.connect(component.update_scale)
+        component.set_scene_mode(self._mode)
+        self.scene_mode_changed.connect(component.set_scene_mode)
         if isinstance(component, ScalableComponent):
             self._animation_timer.timeout.connect(component.update_selection)
         elif isinstance(component, ComponentGroup):
@@ -268,6 +287,7 @@ class ExtendedScene(QGraphicsView):
         self._components.remove(component)
         self._scene.removeItem(component)
         self.scale_changed.disconnect(component.update_scale)
+        self.scene_mode_changed.disconnect(component.set_scene_mode)
         if isinstance(component, ScalableComponent):
             self._animation_timer.timeout.disconnect(component.update_selection)
 
@@ -295,6 +315,14 @@ class ExtendedScene(QGraphicsView):
             raise ValueError("Call 'clear_scene' first!")
 
         self._background = self._scene.addPixmap(background)
+
+    def set_scene_mode(self, mode: SceneMode) -> None:
+        """
+        :param mode: new scene mode.
+        """
+
+        self._mode = mode
+        self.scene_mode_changed.emit(mode)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """
