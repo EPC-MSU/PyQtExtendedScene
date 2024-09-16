@@ -4,8 +4,8 @@ from PyQt5.QtCore import QPointF
 
 def get_left_top_pos(points: List[QPointF]) -> Tuple[float, float]:
     """
-    :param points:
-    :return:
+    :param points: list of points.
+    :return: the smallest coordinate of points along the x and y axes.
     """
 
     left, top = None, None
