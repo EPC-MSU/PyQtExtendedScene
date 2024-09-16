@@ -104,15 +104,10 @@ class ExtendedScene(QGraphicsView):
         :param item: component clicked by mouse.
         """
 
-        if self._mode == SceneMode.EDIT and self._handle_mouse_left_button_press_in_edit_mode(item):
-            return
-
         if item:
             self.on_component_left_click.emit(item)
-            if item.selectable:
-                if not item.isSelected() and item.unique_selection:
-                    self.remove_all_selections()
-            self._state = ExtendedScene.State.DRAG_COMPONENT
+
+        if item and self._mode == SceneMode.EDIT and self._handle_mouse_left_button_press_in_edit_mode(item):
             return
 
         # We are in drag board mode now
@@ -121,12 +116,23 @@ class ExtendedScene(QGraphicsView):
         self._state = ExtendedScene.State.DRAG
 
     def _handle_mouse_left_button_press_in_edit_mode(self, item: Optional[QGraphicsItem]) -> bool:
+        """
+        :param item:
+        :return:
+        """
+
         if (isinstance(item, ScalableComponent) and item.isSelected() and
                 item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
             item.setFlag(QGraphicsItem.ItemIsMovable, False)
             self._current_component = item
             self._current_component.fix_mode(item.mode)
             self._state = ExtendedScene.State.RESIZE_COMPONENT
+            return True
+
+        if item.selectable:
+            if not item.isSelected() and item.unique_selection:
+                self.remove_all_selections()
+            self._state = ExtendedScene.State.DRAG_COMPONENT
             return True
 
         return False

@@ -74,12 +74,21 @@ class BaseComponent:
 
         ...
 
+    def is_in_group(self) -> bool:
+        """
+        :return: True if the item belongs to the component group.
+        """
+
+        from .componentgroup import ComponentGroup
+
+        return isinstance(self.parentItem(), ComponentGroup)
+
     def is_selected(self) -> bool:
         """
         :return: True if the component is selected (by itself or within a group).
         """
 
-        return self._selected_at_group if self.parentItem() else self.isSelected()
+        return self._selected_at_group if self.is_in_group() else self.isSelected()
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value) -> Any:
         """
@@ -112,6 +121,10 @@ class BaseComponent:
         """
 
         self._scene_mode = mode
+        if self._scene_mode == SceneMode.NO_ACTION:
+            self.setFlag(QGraphicsItem.ItemIsMovable, False)
+        elif self._scene_mode == SceneMode.EDIT and not self.is_in_group():
+            self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
 
     def set_selected_at_group(self, selected: bool) -> None:
         """
