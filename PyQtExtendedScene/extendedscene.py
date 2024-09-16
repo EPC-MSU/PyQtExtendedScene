@@ -121,7 +121,7 @@ class ExtendedScene(QGraphicsView):
     def _handle_mouse_left_button_press_in_edit_mode(self, item: Optional[QGraphicsItem]) -> bool:
         """
         :param item: component clicked by mouse.
-        :return:
+        :return: True if the event was handled.
         """
 
         if (isinstance(item, ScalableComponent) and item.isSelected() and
@@ -155,12 +155,6 @@ class ExtendedScene(QGraphicsView):
 
     def _handle_mouse_middle_button_press(self) -> None:
         self.on_middle_click.emit()
-        self.setDragMode(QGraphicsView.RubberBandDrag)
-        self._state = ExtendedScene.State.SELECT_COMPONENT
-
-    def _handle_mouse_middle_button_release(self) -> None:
-        self.setDragMode(QGraphicsView.NoDrag)
-        self._state = ExtendedScene.State.NO
 
     def _handle_mouse_right_button_press(self, event: QMouseEvent, item: QGraphicsItem) -> None:
         """
@@ -170,6 +164,9 @@ class ExtendedScene(QGraphicsView):
 
         if item:
             self.on_component_right_click.emit(item)
+
+        if self._mode == SceneMode.NO_ACTION:
+            self._handle_mouse_right_button_press_in_no_action_mode()
             return
 
         pos = self.mapToScene(event.pos())
@@ -180,13 +177,25 @@ class ExtendedScene(QGraphicsView):
         self.on_right_click.emit(pos)
         self._state = ExtendedScene.State.CREATE_COMPONENT
 
+    def _handle_mouse_right_button_press_in_no_action_mode(self) -> None:
+        self.setDragMode(QGraphicsView.RubberBandDrag)
+        self._state = ExtendedScene.State.SELECT_COMPONENT
+
     def _handle_mouse_right_button_release(self) -> None:
+        if self._mode == SceneMode.NO_ACTION:
+            self._handle_mouse_right_button_release_in_no_action_mode()
+            return
+
         if self._current_component:
             self._scene.removeItem(self._current_component)
             if self._current_component.check_big_enough():
                 self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
                 self.add_component(self._current_component)
             self._current_component = None
+        self._state = ExtendedScene.State.NO
+
+    def _handle_mouse_right_button_release_in_no_action_mode(self) -> None:
+        self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO
 
     def add_component(self, component: QGraphicsItem) -> None:
@@ -268,8 +277,6 @@ class ExtendedScene(QGraphicsView):
 
         if event.button() == Qt.LeftButton:
             self._handle_mouse_left_button_release()
-        elif event.button() == Qt.MiddleButton:
-            self._handle_mouse_middle_button_release()
         elif event.button() == Qt.RightButton:
             self._handle_mouse_right_button_release()
         super().mouseReleaseEvent(event)
