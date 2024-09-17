@@ -427,11 +427,12 @@ class ExtendedScene(QGraphicsView):
         :param mode: new scene mode.
         """
 
-        self._mode = mode
-        self.scene_mode_changed.emit(mode)
-
+        print("mode", mode)
         if self._mode is SceneMode.EDIT_GROUP:
             self._add_items_to_edited_group()
+
+        self._mode = mode
+        self.scene_mode_changed.emit(mode)
 
         if mode is SceneMode.EDIT_GROUP:
             self._remove_items_from_edited_group()

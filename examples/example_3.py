@@ -1,8 +1,8 @@
 import os
 import sys
-from PyQt5.QtCore import QRectF
+from PyQt5.QtCore import pyqtSlot, QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QAction, QApplication, QMenu
 
 
 try:
@@ -12,6 +12,30 @@ except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, ScalableComponent
     from PyQtExtendedScene.scenemode import SceneMode
+
+
+class SceneWithMenu(ExtendedScene):
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.middle_clicked.connect(self._show_context_menu)
+
+    @pyqtSlot(QPointF)
+    def _show_context_menu(self, pos: QPointF) -> None:
+        no_action = QAction("Обычный режим")
+        no_action.triggered.connect(lambda: self.set_scene_mode(SceneMode.NO_ACTION))
+        edit_action = QAction("Режим редактирования")
+        edit_action.triggered.connect(lambda: self.set_scene_mode(SceneMode.EDIT))
+        edit_group_action = QAction("Режим редактирования группы")
+        edit_group_action.triggered.connect(lambda: self.set_scene_mode(SceneMode.EDIT_GROUP))
+
+        menu = QMenu(self)
+        menu.addAction(no_action)
+        menu.addAction(edit_action)
+        menu.addAction(edit_group_action)
+
+        from_scene = self.mapFromScene(pos)
+        menu.exec_(self.mapToGlobal(from_scene))
 
 
 if __name__ == "__main__":
@@ -26,7 +50,7 @@ if __name__ == "__main__":
         image = None
 
     # Create workspace!
-    widget = ExtendedScene(image)
+    widget = SceneWithMenu(image)
     widget.setBackgroundBrush(QBrush(QColor("white")))
 
     point_component = PointComponent(4)
@@ -51,9 +75,6 @@ if __name__ == "__main__":
     group.addToGroup(point_component_for_group)
     group.addToGroup(rect_component_for_group)
     widget.add_component(group)
-
-    group.setSelected(True)
-    widget.set_scene_mode(SceneMode.EDIT_GROUP)
 
     widget.show()
     sys.exit(app.exec_())
