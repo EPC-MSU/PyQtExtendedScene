@@ -23,11 +23,19 @@ class SceneWithMenu(ExtendedScene):
     @pyqtSlot(QPointF)
     def _show_context_menu(self, pos: QPointF) -> None:
         no_action = QAction("Обычный режим")
-        no_action.triggered.connect(lambda: self.set_scene_mode(SceneMode.NO_ACTION))
+        no_action.setCheckable(True)
+        no_action.setChecked(self._mode is SceneMode.NO_ACTION)
+        no_action.toggled.connect(lambda: self.set_scene_mode(SceneMode.NO_ACTION))
+
         edit_action = QAction("Режим редактирования")
-        edit_action.triggered.connect(lambda: self.set_scene_mode(SceneMode.EDIT))
+        edit_action.setCheckable(True)
+        edit_action.setChecked(self._mode is SceneMode.EDIT)
+        edit_action.toggled.connect(lambda: self.set_scene_mode(SceneMode.EDIT))
+
         edit_group_action = QAction("Режим редактирования группы")
-        edit_group_action.triggered.connect(lambda: self.set_scene_mode(SceneMode.EDIT_GROUP))
+        edit_group_action.setCheckable(True)
+        edit_group_action.setChecked(self._mode is SceneMode.EDIT_GROUP)
+        edit_group_action.toggled.connect(lambda: self.set_scene_mode(SceneMode.EDIT_GROUP))
 
         menu = QMenu(self)
         menu.addAction(no_action)

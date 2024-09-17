@@ -59,7 +59,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         unselected.
         """
 
-        self._set_rect(self._r * PointComponent.INCREASE_FACTOR if self._r is not None and selected else self._r)
+        self._set_rect(self._r * PointComponent.INCREASE_FACTOR if selected else self._r)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """

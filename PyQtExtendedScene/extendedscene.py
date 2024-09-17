@@ -95,6 +95,7 @@ class ExtendedScene(QGraphicsView):
 
     def _finish_create_point_component_by_mouse(self) -> None:
         if self._current_component:
+            self._current_component.setSelected(False)
             self._scene.removeItem(self._current_component)
             self.add_component(self._current_component)
             self._current_component = None
@@ -247,7 +248,7 @@ class ExtendedScene(QGraphicsView):
         :return: True if the mode is set.
         """
 
-        if (isinstance(item, ScalableComponent) and item.isSelected() and
+        if (isinstance(item, ScalableComponent) and item.isSelected() and not item.is_in_group() and
                 item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
             item.go_to_resize_mode()
             self._current_component = item
@@ -264,6 +265,9 @@ class ExtendedScene(QGraphicsView):
         """
         :param pos: mouse position.
         """
+
+        if self._current_component:
+            self._scene.removeItem(self._current_component)
 
         self._current_component = PointComponent()
         self._current_component.setPos(pos)
@@ -337,7 +341,9 @@ class ExtendedScene(QGraphicsView):
         self._mouse_pos = self.mapToScene(event.pos())
         if self._state is ExtendedScene.State.CREATE_COMPONENT:
             self._handle_component_creation_by_mouse()
-        elif self._state is ExtendedScene.State.RESIZE_COMPONENT:
+            return
+
+        if self._state is ExtendedScene.State.RESIZE_COMPONENT:
             self._handle_component_resize_by_mouse()
 
         super().mouseMoveEvent(event)
@@ -371,6 +377,9 @@ class ExtendedScene(QGraphicsView):
         super().mouseReleaseEvent(event)
 
     def paste_copied_components(self) -> None:
+        if self._mode is not SceneMode.EDIT:
+            return
+
         self.remove_all_selections()
         left, top = ut.get_left_top_pos([pos for _, pos in self._copied_components])
 
@@ -427,7 +436,6 @@ class ExtendedScene(QGraphicsView):
         :param mode: new scene mode.
         """
 
-        print("mode", mode)
         if self._mode is SceneMode.EDIT_GROUP:
             self._add_items_to_edited_group()
 

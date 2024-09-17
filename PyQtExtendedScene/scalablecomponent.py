@@ -135,7 +135,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         :return: mode.
         """
 
-        if self.isSelected() and self._scene_mode is not SceneMode.NO_ACTION:
+        if self.isSelected() and self._scene_mode is not SceneMode.NO_ACTION and not self.is_in_group():
             return self._get_mode_by_mouse_position(pos)
 
         return ScalableComponent.Mode.NO_ACTION
