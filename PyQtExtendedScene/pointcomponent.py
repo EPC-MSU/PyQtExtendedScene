@@ -13,6 +13,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     INCREASE_FACTOR: float = 2
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
+    RADIUS: float = 4
 
     def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, draggable: bool = True,
                  selectable: bool = True, unique_selection: bool = False) -> None:
@@ -28,11 +29,11 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         QGraphicsEllipseItem.__init__(self)
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
-        self._r: Optional[float] = radius
+        self._r: Optional[float] = radius or PointComponent.RADIUS
         self._scale_factor: float = 1
 
         self.setPen(pen)
-        self._set_rect(radius)
+        self._set_rect(self._r)
 
     def _set_rect(self, radius: Optional[float]) -> None:
         """

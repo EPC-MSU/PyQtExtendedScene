@@ -7,6 +7,7 @@ from . import utils as ut
 from .abstractcomponent import AbstractComponent
 from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
+from .pointcomponent import PointComponent
 from .scalablecomponent import ScalableComponent
 from .scenemode import SceneMode
 
@@ -77,6 +78,21 @@ class ExtendedScene(QGraphicsView):
         self._paste_shortcut.setContext(Qt.WindowShortcut)
         self._paste_shortcut.activated.connect(self.paste_copied_components)
 
+    def _finish_create_point_component_by_mouse(self) -> None:
+        if self._current_component:
+            self._scene.removeItem(self._current_component)
+            self.add_component(self._current_component)
+            self._current_component = None
+
+    def _finish_create_scalable_component_by_mouse(self) -> None:
+        if self._current_component:
+            self._scene.removeItem(self._current_component)
+            if self._current_component.check_big_enough():
+                self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
+                self.add_component(self._current_component)
+            self._current_component = None
+        self._state = ExtendedScene.State.NO_ACTION
+
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
         """
         :param event: mouse event.
@@ -89,6 +105,15 @@ class ExtendedScene(QGraphicsView):
 
         return None
 
+    def _handle_component_creation_by_mouse(self) -> None:
+        if isinstance(self._current_component, PointComponent):
+            self._current_component.setPos(self._mouse_pos)
+        elif isinstance(self._current_component, ScalableComponent):
+            self._current_component.resize_by_mouse(self._mouse_pos)
+
+    def _handle_component_resize_by_mouse(self) -> None:
+        self._current_component.resize_by_mouse(self._mouse_pos)
+
     def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
         """
         :param item: component clicked by mouse;
@@ -97,39 +122,26 @@ class ExtendedScene(QGraphicsView):
 
         if item:
             self.on_component_left_click.emit(item)
+        else:
+            self.left_clicked.emit(pos)
 
-        if item and self._mode == SceneMode.EDIT and self._handle_mouse_left_button_press_in_edit_mode(item):
+        if self._mode == SceneMode.EDIT:
+            if item and self._set_resize_mode_for_scalable_component(item):
+                return
+
+            if item and self._set_drag_component_mode(item):
+                return
+
+            self._start_create_point_component_by_mouse(pos)
             return
 
         if item:
             return
 
         # We are in drag board mode now
-        self.left_clicked.emit(pos)
         self.remove_all_selections()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self._state = ExtendedScene.State.DRAG
-
-    def _handle_mouse_left_button_press_in_edit_mode(self, item: Optional[QGraphicsItem]) -> bool:
-        """
-        :param item: component clicked by mouse.
-        :return: True if the event was handled.
-        """
-
-        if (isinstance(item, ScalableComponent) and item.isSelected() and
-                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
-            item.go_to_resize_mode()
-            self._current_component = item
-            self._state = ExtendedScene.State.RESIZE_COMPONENT
-            return True
-
-        if item.selectable:
-            if not item.isSelected() and item.unique_selection:
-                self.remove_all_selections()
-            self._state = ExtendedScene.State.DRAG_COMPONENT
-            return True
-
-        return False
 
     def _handle_mouse_left_button_release(self) -> None:
         if self._state == ExtendedScene.State.DRAG_COMPONENT:
@@ -137,8 +149,10 @@ class ExtendedScene(QGraphicsView):
                 for item in self._scene.selectedItems():
                     self.on_component_moved.emit(item)
         elif self._state == ExtendedScene.State.RESIZE_COMPONENT:
-            for item in self._scene.selectedItems():
-                item.setFlag(QGraphicsItem.ItemIsMovable, item.draggable)
+            self._current_component.setFlag(QGraphicsItem.ItemIsMovable, self._current_component.draggable)
+            self._current_component = None
+        elif self._state == ExtendedScene.State.CREATE_COMPONENT:
+            self._finish_create_point_component_by_mouse()
 
         self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO_ACTION
@@ -162,39 +176,73 @@ class ExtendedScene(QGraphicsView):
             self.right_clicked.emit(pos)
 
         if self._mode == SceneMode.NO_ACTION:
-            self._handle_mouse_right_button_press_in_no_action_mode()
+            self._set_select_component_mode()
         elif self._mode == SceneMode.EDIT:
-            self._handle_mouse_right_button_press_in_edit_mode(pos)
+            self._start_create_scalable_component_by_mouse(pos)
 
-    def _handle_mouse_right_button_press_in_edit_mode(self, pos: QPointF) -> None:
+    def _handle_mouse_right_button_release(self) -> None:
+        if self._mode == SceneMode.NO_ACTION:
+            self._set_no_action_mode()
+        elif self._mode == SceneMode.EDIT:
+            self._finish_create_scalable_component_by_mouse()
+
+    def _set_drag_component_mode(self, item: QGraphicsItem) -> bool:
+        """
+        :param item: component that will be dragged.
+        :return: True if the mode is set.
+        """
+
+        if item.selectable:
+            if not item.isSelected() and item.unique_selection:
+                self.remove_all_selections()
+            self._state = ExtendedScene.State.DRAG_COMPONENT
+            return True
+
+        return False
+
+    def _set_no_action_mode(self) -> None:
+        self.setDragMode(QGraphicsView.NoDrag)
+        self._state = ExtendedScene.State.NO_ACTION
+
+    def _set_resize_mode_for_scalable_component(self, item: ScalableComponent) -> bool:
+        """
+        :param item: component that will be resized.
+        :return: True if the mode is set.
+        """
+
+        if (isinstance(item, ScalableComponent) and item.isSelected() and
+                item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
+            item.go_to_resize_mode()
+            self._current_component = item
+            self._state = ExtendedScene.State.RESIZE_COMPONENT
+            return True
+
+        return False
+
+    def _set_select_component_mode(self) -> None:
+        self.setDragMode(QGraphicsView.RubberBandDrag)
+        self._state = ExtendedScene.State.SELECT_COMPONENT
+
+    def _start_create_point_component_by_mouse(self, pos: QPointF) -> None:
+        """
+        :param pos: mouse position.
+        """
+
+        self._current_component = PointComponent()
+        self._current_component.setPos(pos)
+        self._scene.addItem(self._current_component)
+        self._state = ExtendedScene.State.CREATE_COMPONENT
+
+    def _start_create_scalable_component_by_mouse(self, pos: QPointF) -> None:
+        """
+        :param pos: mouse position.
+        """
+
         self._current_component = ScalableComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
         self._current_component.setPos(pos)
         self._scene.addItem(self._current_component)
         self._current_component.fix_mode(ScalableComponent.Mode.RESIZE_ANY)
         self._state = ExtendedScene.State.CREATE_COMPONENT
-
-    def _handle_mouse_right_button_press_in_no_action_mode(self) -> None:
-        self.setDragMode(QGraphicsView.RubberBandDrag)
-        self._state = ExtendedScene.State.SELECT_COMPONENT
-
-    def _handle_mouse_right_button_release(self) -> None:
-        if self._mode == SceneMode.NO_ACTION:
-            self._handle_mouse_right_button_release_in_no_action_mode()
-        elif self._mode == SceneMode.EDIT:
-            self._handle_mouse_right_button_release_in_edit_mode()
-
-    def _handle_mouse_right_button_release_in_edit_mode(self) -> None:
-        if self._current_component:
-            self._scene.removeItem(self._current_component)
-            if self._current_component.check_big_enough():
-                self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
-                self.add_component(self._current_component)
-            self._current_component = None
-        self._state = ExtendedScene.State.NO_ACTION
-
-    def _handle_mouse_right_button_release_in_no_action_mode(self) -> None:
-        self.setDragMode(QGraphicsView.NoDrag)
-        self._state = ExtendedScene.State.NO_ACTION
 
     def add_component(self, component: QGraphicsItem) -> None:
         """
@@ -250,8 +298,11 @@ class ExtendedScene(QGraphicsView):
         """
 
         self._mouse_pos = self.mapToScene(event.pos())
-        if self._state in (ExtendedScene.State.CREATE_COMPONENT, ExtendedScene.State.RESIZE_COMPONENT):
-            self._current_component.resize_by_mouse(self._mouse_pos)
+        if self._state == ExtendedScene.State.CREATE_COMPONENT:
+            self._handle_component_creation_by_mouse()
+        elif self._state == ExtendedScene.State.RESIZE_COMPONENT:
+            self._handle_component_resize_by_mouse()
+
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
