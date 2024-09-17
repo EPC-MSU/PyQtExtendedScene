@@ -123,6 +123,11 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
             self.removeFromGroup(item)
             self.addToGroup(item)
 
+    def set_edit_group_mode(self) -> None:
+        for item in self.childItems():
+            self.removeFromGroup(item)
+            yield item
+
     def set_scene_mode(self, mode: SceneMode) -> None:
         """
         :param mode: new scene mode.
