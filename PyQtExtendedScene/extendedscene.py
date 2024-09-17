@@ -31,7 +31,7 @@ class ExtendedScene(QGraphicsView):
         CREATE_COMPONENT = auto()
         DRAG = auto()
         DRAG_COMPONENT = auto()
-        NO = auto()
+        NO_ACTION = auto()
         RESIZE_COMPONENT = auto()
         SELECT_COMPONENT = auto()
 
@@ -52,7 +52,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component: Optional[QGraphicsItem] = None
         self._drag_allowed: bool = True
         self._mouse_pos: QPointF = QPointF()
-        self._state: ExtendedScene.State = ExtendedScene.State.NO
+        self._state: ExtendedScene.State = ExtendedScene.State.NO_ACTION
 
         self._scene: QGraphicsScene = QGraphicsScene()
         self.setScene(self._scene)
@@ -151,7 +151,7 @@ class ExtendedScene(QGraphicsView):
             for item in self._scene.selectedItems():
                 item.setFlag(QGraphicsItem.ItemIsMovable, True)
 
-        self._state = ExtendedScene.State.NO
+        self._state = ExtendedScene.State.NO_ACTION
 
     def _handle_mouse_middle_button_press(self) -> None:
         self.on_middle_click.emit()
@@ -192,11 +192,11 @@ class ExtendedScene(QGraphicsView):
                 self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
                 self.add_component(self._current_component)
             self._current_component = None
-        self._state = ExtendedScene.State.NO
+        self._state = ExtendedScene.State.NO_ACTION
 
     def _handle_mouse_right_button_release_in_no_action_mode(self) -> None:
         self.setDragMode(QGraphicsView.NoDrag)
-        self._state = ExtendedScene.State.NO
+        self._state = ExtendedScene.State.NO_ACTION
 
     def add_component(self, component: QGraphicsItem) -> None:
         """
