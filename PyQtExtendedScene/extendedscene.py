@@ -279,6 +279,9 @@ class ExtendedScene(QGraphicsView):
         :param pos: mouse position.
         """
 
+        if self._current_component:
+            self._scene.removeItem(self._current_component)
+
         self._current_component = ScalableComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
         self._current_component.setPos(pos)
         self._scene.addItem(self._current_component)
