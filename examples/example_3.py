@@ -52,7 +52,7 @@ if __name__ == "__main__":
     group.addToGroup(rect_component_for_group)
     widget.add_component(group)
 
-    widget.set_scene_mode(SceneMode.NO_ACTION)
+    widget.set_scene_mode(SceneMode.EDIT)
 
     widget.show()
     sys.exit(app.exec_())

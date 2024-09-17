@@ -3,7 +3,8 @@ from enum import auto, Enum
 from typing import Callable, Optional, Tuple
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle, QStyleOptionGraphicsItem, QWidget
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
+                             QStyleOptionGraphicsItem, QWidget)
 from .basecomponent import BaseComponent
 from .scenemode import SceneMode
 
@@ -128,14 +129,14 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         pen.setCosmetic(True)
         return pen
 
-    def _get_mode(self, pos: QPointF) -> Mode:
+    def _determine_mode(self, pos: QPointF) -> Mode:
         """
         :param pos: mouse position.
         :return: mode.
         """
 
         if self.is_selected() and (self._scene_mode == SceneMode.EDIT or
-                                   (self._scene_mode == SceneMode.EDIT_GROUP and self.parentItem())):
+                                   (self._scene_mode == SceneMode.EDIT_GROUP and self.is_in_group())):
             return self._get_mode_by_mouse_position(pos)
 
         return ScalableComponent.Mode.NO_ACTION
@@ -270,7 +271,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
 
     def fix_mode(self, mode: Mode) -> None:
         """
-        :param mode: new mode.
+        :param mode: new mode that will be fixed for the component.
         """
 
         self._mode = mode
@@ -293,12 +294,16 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         elif self._mode == ScalableComponent.Mode.RESIZE_TOP:
             self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
+    def go_to_resize_mode(self) -> None:
+        self.setFlag(QGraphicsItem.ItemIsMovable, False)
+        self.fix_mode(self._mode)
+
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """
         :param event: hover event.
         """
 
-        self._mode = self._get_mode(event.pos())
+        self._mode = self._determine_mode(event.pos())
         self._set_cursor()
 
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
@@ -306,7 +311,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         :param event: hover event.
         """
 
-        self._mode = self._get_mode(event.pos())
+        self._mode = self._determine_mode(event.pos())
         self._set_cursor()
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:

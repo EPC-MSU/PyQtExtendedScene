@@ -15,11 +15,12 @@ class ExtendedScene(QGraphicsView):
 
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
+    left_clicked: pyqtSignal = pyqtSignal(QPointF)
+    middle_clicked: pyqtSignal = pyqtSignal(QPointF)
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
-    on_middle_click: pyqtSignal = pyqtSignal()
-    on_right_click: pyqtSignal = pyqtSignal(QPointF)
+    right_clicked: pyqtSignal = pyqtSignal(QPointF)
     scale_changed: pyqtSignal = pyqtSignal(float)
     scene_mode_changed: pyqtSignal = pyqtSignal(SceneMode)
 
@@ -43,16 +44,15 @@ class ExtendedScene(QGraphicsView):
         """
 
         super().__init__(parent)
-        self._mode: SceneMode = SceneMode.NO_ACTION
-        self._scale: float = 1.0
-        self._zoom_speed: float = zoom_speed
-
         self._components: List[QGraphicsItem] = []
         self._copied_components: List[Tuple[BaseComponent, QPointF]] = []
         self._current_component: Optional[QGraphicsItem] = None
         self._drag_allowed: bool = True
+        self._mode: SceneMode = SceneMode.NO_ACTION
         self._mouse_pos: QPointF = QPointF()
+        self._scale: float = 1.0
         self._state: ExtendedScene.State = ExtendedScene.State.NO_ACTION
+        self._zoom_speed: float = zoom_speed
 
         self._scene: QGraphicsScene = QGraphicsScene()
         self.setScene(self._scene)
@@ -64,28 +64,18 @@ class ExtendedScene(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QBrush(QColor(0, 0, 0)))
         self.setFrameShape(QFrame.NoFrame)
-        # Mouse
         self.setMouseTracking(True)
         # For keyboard events
         self.setFocusPolicy(Qt.StrongFocus)
 
+        self._animation_timer: QTimer = QTimer()
+        self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
         self._copy_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self)
         self._copy_shortcut.setContext(Qt.WindowShortcut)
         self._copy_shortcut.activated.connect(self.copy_selected_components)
         self._paste_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self)
         self._paste_shortcut.setContext(Qt.WindowShortcut)
         self._paste_shortcut.activated.connect(self.paste_copied_components)
-
-        self._animation_timer: QTimer = QTimer()
-        self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
-
-    @property
-    def scene_mode(self) -> SceneMode:
-        """
-        :return: scene mode.
-        """
-
-        return self._mode
 
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
         """
@@ -99,9 +89,10 @@ class ExtendedScene(QGraphicsView):
 
         return None
 
-    def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem]) -> None:
+    def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
         """
-        :param item: component clicked by mouse.
+        :param item: component clicked by mouse;
+        :param pos: mouse position.
         """
 
         if item:
@@ -114,6 +105,7 @@ class ExtendedScene(QGraphicsView):
             return
 
         # We are in drag board mode now
+        self.left_clicked.emit(pos)
         self.remove_all_selections()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self._state = ExtendedScene.State.DRAG
@@ -126,9 +118,8 @@ class ExtendedScene(QGraphicsView):
 
         if (isinstance(item, ScalableComponent) and item.isSelected() and
                 item.mode not in (ScalableComponent.Mode.MOVE, ScalableComponent.Mode.NO_ACTION)):
-            item.setFlag(QGraphicsItem.ItemIsMovable, False)
+            item.go_to_resize_mode()
             self._current_component = item
-            self._current_component.fix_mode(item.mode)
             self._state = ExtendedScene.State.RESIZE_COMPONENT
             return True
 
@@ -141,40 +132,45 @@ class ExtendedScene(QGraphicsView):
         return False
 
     def _handle_mouse_left_button_release(self) -> None:
-        self.setDragMode(QGraphicsView.NoDrag)
-
         if self._state == ExtendedScene.State.DRAG_COMPONENT:
             if self._scene.selectedItems():
                 for item in self._scene.selectedItems():
                     self.on_component_moved.emit(item)
         elif self._state == ExtendedScene.State.RESIZE_COMPONENT:
             for item in self._scene.selectedItems():
-                item.setFlag(QGraphicsItem.ItemIsMovable, True)
+                item.setFlag(QGraphicsItem.ItemIsMovable, item.draggable)
 
+        self.setDragMode(QGraphicsView.NoDrag)
         self._state = ExtendedScene.State.NO_ACTION
 
-    def _handle_mouse_middle_button_press(self) -> None:
-        self.on_middle_click.emit()
-
-    def _handle_mouse_right_button_press(self, event: QMouseEvent, item: QGraphicsItem) -> None:
+    def _handle_mouse_middle_button_press(self, pos: QPointF) -> None:
         """
-        :param event: mouse event;
-        :param item: component clicked by mouse.
+        :param pos: mouse position.
+        """
+
+        self.middle_clicked.emit(pos)
+
+    def _handle_mouse_right_button_press(self, item: QGraphicsItem, pos: QPointF) -> None:
+        """
+        :param item: component clicked by mouse;
+        :param pos: mouse position.
         """
 
         if item:
             self.on_component_right_click.emit(item)
+        else:
+            self.right_clicked.emit(pos)
 
         if self._mode == SceneMode.NO_ACTION:
             self._handle_mouse_right_button_press_in_no_action_mode()
-            return
+        elif self._mode == SceneMode.EDIT:
+            self._handle_mouse_right_button_press_in_edit_mode(pos)
 
-        pos = self.mapToScene(event.pos())
+    def _handle_mouse_right_button_press_in_edit_mode(self, pos: QPointF) -> None:
         self._current_component = ScalableComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
         self._current_component.setPos(pos)
         self._scene.addItem(self._current_component)
         self._current_component.fix_mode(ScalableComponent.Mode.RESIZE_ANY)
-        self.on_right_click.emit(pos)
         self._state = ExtendedScene.State.CREATE_COMPONENT
 
     def _handle_mouse_right_button_press_in_no_action_mode(self) -> None:
@@ -184,8 +180,10 @@ class ExtendedScene(QGraphicsView):
     def _handle_mouse_right_button_release(self) -> None:
         if self._mode == SceneMode.NO_ACTION:
             self._handle_mouse_right_button_release_in_no_action_mode()
-            return
+        elif self._mode == SceneMode.EDIT:
+            self._handle_mouse_right_button_release_in_edit_mode()
 
+    def _handle_mouse_right_button_release_in_edit_mode(self) -> None:
         if self._current_component:
             self._scene.removeItem(self._current_component)
             if self._current_component.check_big_enough():
@@ -262,12 +260,13 @@ class ExtendedScene(QGraphicsView):
         """
 
         item = self._get_clicked_item(event)
+        pos = self.mapToScene(event.pos())
         if event.button() == Qt.LeftButton:
-            self._handle_mouse_left_button_press(item)
+            self._handle_mouse_left_button_press(item, pos)
         elif event.button() == Qt.MiddleButton:
-            self._handle_mouse_middle_button_press()
+            self._handle_mouse_middle_button_press(pos)
         elif event.button() == Qt.RightButton:
-            self._handle_mouse_right_button_press(event, item)
+            self._handle_mouse_right_button_press(item, pos)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
