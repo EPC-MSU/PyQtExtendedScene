@@ -2,7 +2,7 @@ import os
 import sys
 from PyQt5.QtCore import pyqtSlot, QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QAction, QApplication, QMenu
+from PyQt5.QtWidgets import QDialog, QApplication, QHBoxLayout, QRadioButton, QVBoxLayout
 
 
 try:
@@ -14,75 +14,82 @@ except ImportError:
     from PyQtExtendedScene.scenemode import SceneMode
 
 
-class SceneWithMenu(ExtendedScene):
+class Dialog(QDialog):
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.middle_clicked.connect(self._show_context_menu)
+    def __init__(self) -> None:
+        super().__init__()
+        self._init_ui()
 
-    @pyqtSlot(QPointF)
-    def _show_context_menu(self, pos: QPointF) -> None:
-        no_action = QAction("Обычный режим")
-        no_action.setCheckable(True)
-        no_action.setChecked(self._mode is SceneMode.NO_ACTION)
-        no_action.toggled.connect(lambda: self.set_scene_mode(SceneMode.NO_ACTION))
+    @staticmethod
+    def _create_extended_scene() -> ExtendedScene:
+        # Open workspace background image
+        path_to_image = os.path.join("images", "workspace.png")
+        if os.path.isfile(path_to_image):
+            image = QPixmap(path_to_image)
+            image = image.scaled(800, 600)
+        else:
+            image = None
 
-        edit_action = QAction("Режим редактирования")
-        edit_action.setCheckable(True)
-        edit_action.setChecked(self._mode is SceneMode.EDIT)
-        edit_action.toggled.connect(lambda: self.set_scene_mode(SceneMode.EDIT))
+        widget = ExtendedScene(image)
+        widget.setBackgroundBrush(QBrush(QColor("white")))
 
-        edit_group_action = QAction("Режим редактирования группы")
-        edit_group_action.setCheckable(True)
-        edit_group_action.setChecked(self._mode is SceneMode.EDIT_GROUP)
-        edit_group_action.toggled.connect(lambda: self.set_scene_mode(SceneMode.EDIT_GROUP))
+        point_component = PointComponent(4)
+        point_component.setBrush(QBrush(QColor("red")))
+        point_component.setPos(100, 300)
+        widget.add_component(point_component)
 
-        menu = QMenu(self)
-        menu.addAction(no_action)
-        menu.addAction(edit_action)
-        menu.addAction(edit_group_action)
+        rect_component = ScalableComponent(QRectF(0, 0, 100, 150))
+        rect_component.setPos(100, 100)
+        rect_component.setBrush(QBrush(QColor("red")))
+        widget.add_component(rect_component)
 
-        from_scene = self.mapFromScene(pos)
-        menu.exec_(self.mapToGlobal(from_scene))
+        point_component_for_group = PointComponent(4)
+        point_component_for_group.setBrush(QBrush(QColor("green")))
+        point_component_for_group.setPos(400, 300)
+
+        rect_component_for_group = ScalableComponent(QRectF(0, 0, 200, 100))
+        rect_component_for_group.setBrush(QBrush(QColor("green")))
+        rect_component_for_group.setPos(400, 100)
+
+        group = ComponentGroup()
+        group.addToGroup(point_component_for_group)
+        group.addToGroup(rect_component_for_group)
+        widget.add_component(group)
+        return widget
+
+    def _init_ui(self) -> None:
+        self.extended_scene = self._create_extended_scene()
+
+        self.button_no_action = QRadioButton("Обычный режим")
+        self.button_no_action.setChecked(True)
+        self.button_no_action.toggled.connect(self._set_mode)
+        self.button_edit = QRadioButton("Редактирование")
+        self.button_edit.toggled.connect(self._set_mode)
+        self.button_edit_group = QRadioButton("Редактирование составного компонента")
+        self.button_edit_group.toggled.connect(self._set_mode)
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(self.button_no_action)
+        h_layout.addWidget(self.button_edit)
+        h_layout.addWidget(self.button_edit_group)
+
+        layout = QVBoxLayout()
+        layout.addLayout(h_layout)
+        layout.addWidget(self.extended_scene)
+        self.setLayout(layout)
+
+    @pyqtSlot()
+    def _set_mode(self) -> None:
+        if self.sender() == self.button_edit:
+            mode = SceneMode.EDIT
+        elif self.sender() == self.button_edit_group:
+            mode = SceneMode.EDIT_GROUP
+        else:
+            mode = SceneMode.NO_ACTION
+        self.extended_scene.set_scene_mode(mode)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    # Open workspace background image
-    path_to_image = os.path.join("images", "workspace.png")
-    if os.path.isfile(path_to_image):
-        image = QPixmap(path_to_image)
-        image = image.scaled(800, 600)
-    else:
-        image = None
-
-    # Create workspace!
-    widget = SceneWithMenu(image)
-    widget.setBackgroundBrush(QBrush(QColor("white")))
-
-    point_component = PointComponent(4)
-    point_component.setBrush(QBrush(QColor("red")))
-    point_component.setPos(100, 300)
-    widget.add_component(point_component)
-
-    rect_component = ScalableComponent(QRectF(0, 0, 100, 150))
-    rect_component.setPos(100, 100)
-    rect_component.setBrush(QBrush(QColor("red")))
-    widget.add_component(rect_component)
-
-    point_component_for_group = PointComponent(4)
-    point_component_for_group.setBrush(QBrush(QColor("green")))
-    point_component_for_group.setPos(400, 300)
-
-    rect_component_for_group = ScalableComponent(QRectF(0, 0, 200, 100))
-    rect_component_for_group.setBrush(QBrush(QColor("green")))
-    rect_component_for_group.setPos(400, 100)
-
-    group = ComponentGroup()
-    group.addToGroup(point_component_for_group)
-    group.addToGroup(rect_component_for_group)
-    widget.add_component(group)
-
-    widget.show()
+    dialog = Dialog()
+    dialog.show()
     sys.exit(app.exec_())
