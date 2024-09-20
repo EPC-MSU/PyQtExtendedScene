@@ -1,6 +1,6 @@
 import os
 import sys
-from PyQt5.QtCore import pyqtSlot, QPointF, QRectF
+from PyQt5.QtCore import pyqtSlot, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import QDialog, QApplication, QHBoxLayout, QRadioButton, QVBoxLayout
 
