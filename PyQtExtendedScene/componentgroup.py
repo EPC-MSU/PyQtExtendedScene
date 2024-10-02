@@ -1,5 +1,5 @@
 from typing import Optional, Tuple
-from PyQt5.QtCore import QPointF, QTimer
+from PyQt5.QtCore import QPointF, Qt, QTimer
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent
 from . import utils as ut
 from .basecomponent import BaseComponent
@@ -83,11 +83,12 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         :param event: mouse event.
         """
 
-        for item in self.childItems():
-            if item.contains(self.mapToItem(item, event.pos())):
-                item.set_selected_at_group(True)
-            elif item.is_selected():
-                item.set_selected_at_group(False)
+        if event.button() == Qt.LeftButton:
+            for item in self.childItems():
+                if item.contains(self.mapToItem(item, event.pos())):
+                    item.set_selected_at_group(True)
+                elif item.is_selected():
+                    item.set_selected_at_group(False)
 
     def set_animation_timer(self, timer: QTimer) -> None:
         """
