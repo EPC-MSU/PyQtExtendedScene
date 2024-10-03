@@ -274,7 +274,7 @@ class ExtendedScene(QGraphicsView):
         if self._current_component:
             self._scene.removeItem(self._current_component)
 
-        self._current_component = PointComponent()
+        self._current_component = PointComponent(scale=self._scale)
         self._current_component.setPos(pos)
         self._scene.addItem(self._current_component)
         self._state = ExtendedScene.State.CREATE_COMPONENT

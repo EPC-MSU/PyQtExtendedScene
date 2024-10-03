@@ -15,11 +15,12 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     PEN_WIDTH: float = 2
     RADIUS: float = 4
 
-    def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, draggable: bool = True,
-                 selectable: bool = True, unique_selection: bool = False) -> None:
+    def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, scale: Optional[float] = None,
+                 draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param radius: point radius;
         :param pen: pen;
+        :param scale: scale factor;
         :param draggable: True if component can be dragged;
         :param selectable: True if component can be selected;
         :param unique_selection: True if selecting this component should reset all others selections
@@ -30,7 +31,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
         self._r: Optional[float] = radius or PointComponent.RADIUS
-        self._scale_factor: float = 1
+        self._scale_factor: float = scale or 1
 
         self.setPen(pen)
         self._set_rect(self._r)
@@ -49,7 +50,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :return: copied component and its current position.
         """
 
-        component = PointComponent(self._r, self.pen(), self._draggable, self._selectable, self._unique_selection)
+        component = PointComponent(self._r, self.pen(), draggable=self._draggable, selectable=self._selectable,
+                                   unique_selection=self._unique_selection)
         component.setBrush(self.brush())
         return component, self.scenePos()
 
