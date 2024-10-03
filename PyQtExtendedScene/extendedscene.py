@@ -13,6 +13,9 @@ from .scenemode import SceneMode
 
 
 class ExtendedScene(QGraphicsView):
+    """
+    Widget for working with graphic objects.
+    """
 
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
@@ -40,7 +43,7 @@ class ExtendedScene(QGraphicsView):
     def __init__(self, background: Optional[QPixmap] = None, zoom_speed: float = 0.001, parent=None) -> None:
         """
         :param background: pixmap background for scene;
-        :param zoom_speed:
+        :param zoom_speed: zoom speed;
         :param parent: parent.
         """
 
