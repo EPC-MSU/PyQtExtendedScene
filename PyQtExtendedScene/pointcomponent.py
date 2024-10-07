@@ -14,6 +14,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
     RADIUS: float = 4
+    Z_VALUE: float = 2
 
     def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, scale: Optional[float] = None,
                  draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
@@ -34,6 +35,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         self._scale_factor: float = scale or 1
 
         self.setPen(pen)
+        self.setZValue(PointComponent.Z_VALUE)
         self._set_rect(self._r)
 
     def _set_rect(self, radius: Optional[float]) -> None:

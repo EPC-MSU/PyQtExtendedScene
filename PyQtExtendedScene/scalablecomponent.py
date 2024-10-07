@@ -81,6 +81,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
     MIN_SIZE: float = 2
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
+    Z_VALUE: float = 1
 
     def __init__(self, rect: Optional[QRectF] = None, pen_color: Optional[QColor] = None,
                  pen_width: Optional[float] = None, draggable: bool = True, selectable: bool = True,
@@ -104,6 +105,7 @@ class ScalableComponent(QGraphicsRectItem, BaseComponent):
         self._y_fixed: Optional[float] = None
 
         self.setPen(pen_color, pen_width)
+        self.setZValue(ScalableComponent.Z_VALUE)
         if rect is not None:
             self.setRect(rect)
 

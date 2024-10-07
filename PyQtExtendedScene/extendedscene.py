@@ -173,7 +173,7 @@ class ExtendedScene(QGraphicsView):
                 for item in self._scene.selectedItems():
                     self.on_component_moved.emit(item)
         elif self._state is ExtendedScene.State.RESIZE_COMPONENT:
-            self._current_component.setFlag(QGraphicsItem.ItemIsMovable, self._current_component.draggable)
+            self._current_component.setFlag(QGraphicsItem.ItemIsMovable, True)
             self._current_component = None
 
         self.setDragMode(QGraphicsView.NoDrag)

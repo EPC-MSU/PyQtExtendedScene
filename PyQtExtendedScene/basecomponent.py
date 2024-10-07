@@ -40,7 +40,7 @@ class BaseComponent:
     @property
     def draggable(self) -> bool:
         """
-        :return: True if component can be dragged.
+        :return: True if component can be dragged in common mode.
         """
 
         return self._draggable
@@ -48,7 +48,7 @@ class BaseComponent:
     @property
     def selectable(self) -> bool:
         """
-        :return: True if component can be selected.
+        :return: True if component can be selected in common mode.
         """
 
         return self._selectable
@@ -56,7 +56,7 @@ class BaseComponent:
     @property
     def unique_selection(self) -> bool:
         """
-        :return: True if selecting this component should reset all others selections.
+        :return: True if selecting this component should reset all others selections in common mode.
         """
 
         return self._unique_selection
@@ -123,8 +123,10 @@ class BaseComponent:
         self._scene_mode = mode
         if self._scene_mode == SceneMode.NO_ACTION:
             self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
+            self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
         elif self._scene_mode == SceneMode.EDIT and not self.is_in_group():
             self.setFlag(QGraphicsItem.ItemIsMovable, True)
+            self.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
     def set_selected_at_group(self, selected: bool) -> None:
         """
