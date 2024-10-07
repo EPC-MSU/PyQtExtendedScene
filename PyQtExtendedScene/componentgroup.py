@@ -106,7 +106,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
     def set_edit_group_mode(self) -> Generator[QGraphicsItem, None, None]:
         """
-        :yield:
+        :yield: components that are in a group.
         """
 
         for item in self.childItems():
