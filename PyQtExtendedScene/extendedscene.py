@@ -107,19 +107,18 @@ class ExtendedScene(QGraphicsView):
             self._group_child_items.clear()
 
     def _finish_create_point_component_by_mouse(self) -> None:
-        if self._current_component:
-            self._current_component.setSelected(False)
-            self._scene.removeItem(self._current_component)
-            self.add_component(self._current_component)
-            self._current_component = None
+        self._current_component.setSelected(False)
+        self._scene.removeItem(self._current_component)
+        self.add_component(self._current_component)
+        self._current_component = None
+        self._state = ExtendedScene.State.NO_ACTION
 
     def _finish_create_scalable_component_by_mouse(self) -> None:
-        if self._current_component:
-            self._scene.removeItem(self._current_component)
-            if self._current_component.check_big_enough():
-                self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
-                self.add_component(self._current_component)
-            self._current_component = None
+        self._scene.removeItem(self._current_component)
+        if self._current_component.check_big_enough():
+            self._current_component.fix_mode(ScalableComponent.Mode.NO_ACTION)
+            self.add_component(self._current_component)
+        self._current_component = None
         self._state = ExtendedScene.State.NO_ACTION
 
     def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
@@ -218,9 +217,9 @@ class ExtendedScene(QGraphicsView):
         if self._mode is SceneMode.NO_ACTION:
             self._set_no_action_mode()
         elif self._mode is SceneMode.EDIT:
-            if self._shift_pressed:
+            if isinstance(self._current_component, PointComponent):
                 self._finish_create_point_component_by_mouse()
-            else:
+            elif isinstance(self._current_component, ScalableComponent):
                 self._finish_create_scalable_component_by_mouse()
 
     def _remove_items_from_edited_group(self) -> None:
