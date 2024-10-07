@@ -43,20 +43,20 @@ class Dialog(QDialog):
         rect_component.setBrush(QBrush(QColor("red")))
         widget.add_component(rect_component)
 
-        point_component_for_group = PointComponent(4, unique_selection=True)
+        point_component_for_group = PointComponent(4)
         point_component_for_group.setBrush(QBrush(QColor("green")))
         point_component_for_group.setPos(400, 300)
-        widget.add_component(point_component_for_group)
+        # widget.add_component(point_component_for_group)
 
-        rect_component_for_group = ScalableComponent(QRectF(0, 0, 200, 100), unique_selection=True)
+        rect_component_for_group = ScalableComponent(QRectF(0, 0, 200, 100))
         rect_component_for_group.setBrush(QBrush(QColor("green")))
         rect_component_for_group.setPos(400, 100)
-        widget.add_component(rect_component_for_group)
+        # widget.add_component(rect_component_for_group)
 
-        # group = ComponentGroup()
-        # group.addToGroup(point_component_for_group)
-        # group.addToGroup(rect_component_for_group)
-        # widget.add_component(group)
+        group = ComponentGroup()
+        group.addToGroup(point_component_for_group)
+        group.addToGroup(rect_component_for_group)
+        widget.add_component(group)
         return widget
 
     def _init_ui(self) -> None:

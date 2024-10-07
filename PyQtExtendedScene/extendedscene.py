@@ -80,6 +80,9 @@ class ExtendedScene(QGraphicsView):
         self._copy_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self)
         self._copy_shortcut.setContext(Qt.WindowShortcut)
         self._copy_shortcut.activated.connect(self.copy_selected_components)
+        self._delete_shortcut: QShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        self._delete_shortcut.setContext(Qt.WindowShortcut)
+        self._delete_shortcut.activated.connect(self.delete_selected_components)
         self._paste_shortcut: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self)
         self._paste_shortcut.setContext(Qt.WindowShortcut)
         self._paste_shortcut.activated.connect(self.paste_copied_components)
@@ -333,6 +336,13 @@ class ExtendedScene(QGraphicsView):
     def copy_selected_components(self) -> None:
         self._copied_components = [item.copy() for item in self._scene.selectedItems()
                                    if isinstance(item, BaseComponent)]
+
+    def delete_selected_components(self) -> None:
+        if self._mode is not SceneMode.EDIT:
+            return
+
+        for item in self._scene.selectedItems():
+            self._scene.removeItem(item)
 
     def is_drag_allowed(self) -> bool:
         """
