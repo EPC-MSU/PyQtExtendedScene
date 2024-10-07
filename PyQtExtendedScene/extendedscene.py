@@ -99,7 +99,10 @@ class ExtendedScene(QGraphicsView):
                 item.setFlag(QGraphicsItem.ItemIsSelectable, item.selectable)
                 self._group.addToGroup(item)
 
-            self._group.show()
+            if not self._group_child_items:
+                self._scene.removeItem(self._group)
+            else:
+                self._group.show()
             self._group = None
             self._group_child_items.clear()
 
@@ -344,11 +347,16 @@ class ExtendedScene(QGraphicsView):
                                    if isinstance(item, BaseComponent)]
 
     def delete_selected_components(self) -> None:
-        if self._mode is not SceneMode.EDIT:
+        if self._mode is SceneMode.NO_ACTION:
             return
 
         for item in self._scene.selectedItems():
             self._scene.removeItem(item)
+            if self._mode is SceneMode.EDIT_GROUP:
+                try:
+                    self._group_child_items.remove(item)
+                except ValueError:
+                    pass
 
     def is_drag_allowed(self) -> bool:
         """
