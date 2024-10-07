@@ -20,9 +20,9 @@ class BaseComponent:
 
     def __init__(self, draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
         """
-        :param draggable: True if component can be dragged;
-        :param selectable: True if component can be selected;
-        :param unique_selection: True if selecting this component should reset all others selections
+        :param draggable: True if component can be dragged in common mode;
+        :param selectable: True if component can be selected in common mode;
+        :param unique_selection: True if selecting this component should reset all others selections in common mode
         ('selectable' must be set).
         """
 
@@ -115,16 +115,16 @@ class BaseComponent:
         new_item_y = mouse_pos.y() + item_pos.y() - top
         self.setPos(new_item_x, new_item_y)
 
-    def set_scene_mode(self, mode) -> None:
+    def set_scene_mode(self, mode: SceneMode) -> None:
         """
         :param mode: new scene mode.
         """
 
         self._scene_mode = mode
         if self._scene_mode == SceneMode.NO_ACTION:
-            self.setFlag(QGraphicsItem.ItemIsMovable, False)
-        elif self._scene_mode == SceneMode.EDIT and not self.is_in_group():
             self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
+        elif self._scene_mode == SceneMode.EDIT and not self.is_in_group():
+            self.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def set_selected_at_group(self, selected: bool) -> None:
         """

@@ -6,6 +6,6 @@ class SceneMode(Enum):
     Enumeration of scene modes.
     """
 
-    EDIT = auto()
-    EDIT_GROUP = auto()
-    NO_ACTION = auto()
+    EDIT = auto()  # individual component editing mode
+    EDIT_GROUP = auto()  # group component editing mode
+    NO_ACTION = auto()  # normal mode

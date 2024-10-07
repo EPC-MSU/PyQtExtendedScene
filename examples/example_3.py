@@ -33,12 +33,12 @@ class Dialog(QDialog):
         widget = ExtendedScene(image)
         widget.setBackgroundBrush(QBrush(QColor("white")))
 
-        point_component = PointComponent(4)
+        point_component = PointComponent(4, draggable=True)
         point_component.setBrush(QBrush(QColor("red")))
         point_component.setPos(100, 300)
         widget.add_component(point_component)
 
-        rect_component = ScalableComponent(QRectF(0, 0, 100, 150))
+        rect_component = ScalableComponent(QRectF(0, 0, 100, 150), draggable=False)
         rect_component.setPos(100, 100)
         rect_component.setBrush(QBrush(QColor("red")))
         widget.add_component(rect_component)
