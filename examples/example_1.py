@@ -1,22 +1,20 @@
 import os
 import sys
-from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
+from PyQt5.QtWidgets import QApplication, QFileDialog
 
 
 try:
-    from PyQtExtendedScene import AbstractComponent, ExtendedScene
+    from PyQtExtendedScene import ExtendedScene
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from PyQtExtendedScene import AbstractComponent, ExtendedScene
+    from PyQtExtendedScene import ExtendedScene, PointComponent
 
 
 # Let's describe our own component
-class MyComponent(AbstractComponent):
+class MyComponent(PointComponent):
 
-    normal_size = 10
-    selected_size = 20
+    NORMAL_SIZE: float = 10
 
     def __init__(self, x: float, y: float, description: str = "") -> None:
         """
@@ -25,17 +23,12 @@ class MyComponent(AbstractComponent):
         :param description: some description for the component.
         """
 
-        super().__init__(draggable=True, selectable=True, unique_selection=True)
+        super().__init__(MyComponent.NORMAL_SIZE, draggable=True, selectable=True, unique_selection=True)
         # Add description to our object - it will be used in "click" callback function
         self._descr: str = description
-        self._r: float = self.normal_size
-
-        self.setPos(QPointF(x, y))
-
-        # We must describe how to draw our own component. Our own component will be just a circle
-        self._item = QGraphicsEllipseItem(-self._r, -self._r, self._r * 2, self._r * 2, self)
         # ... yellow circle
-        self._item.setBrush(QBrush(QColor(0xFFFF00)))
+        self.setBrush(QBrush(QColor(0xFFFF00)))
+        self.setPos(x, y)
 
     @property
     # That is our own property
@@ -45,13 +38,6 @@ class MyComponent(AbstractComponent):
         """
 
         return self._descr
-
-    # We must override parent method "handle_selection" because our component changes shape when selected
-    def handle_selection(self, selected: bool = True) -> None:
-        # Radius of our circle changes when selected
-        self._r = self.selected_size if selected else self.normal_size
-        # redraw our object with new radius
-        self._item.setRect(QRectF(-self._r, -self._r, self._r * 2, self._r * 2))
 
 
 def left_click(component: MyComponent) -> None:
