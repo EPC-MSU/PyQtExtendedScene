@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Generator, Optional, Tuple
 from PyQt5.QtCore import QPointF, Qt, QTimer
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent
 from . import utils as ut
@@ -104,6 +104,15 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
         self._animation_timer = timer
 
+    def set_edit_group_mode(self) -> Generator[QGraphicsItem, None, None]:
+        """
+        :yield:
+        """
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+            yield item
+
     def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left: float, top: float) -> None:
         """
         :param mouse_pos: mouse position;
@@ -123,11 +132,6 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         for item in items:
             self.removeFromGroup(item)
             self.addToGroup(item)
-
-    def set_edit_group_mode(self) -> None:
-        for item in self.childItems():
-            self.removeFromGroup(item)
-            yield item
 
     def set_scene_mode(self, mode: SceneMode) -> None:
         """

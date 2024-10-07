@@ -91,11 +91,14 @@ class ExtendedScene(QGraphicsView):
         if self._group:
             for component in self._components:
                 if component is not self._group:
+                    component.setFlag(QGraphicsItem.ItemIsMovable, component.draggable)
                     component.setFlag(QGraphicsItem.ItemIsSelectable, component.selectable)
 
             for item in self._group_child_items:
                 item.setFlag(QGraphicsItem.ItemIsMovable, item.draggable)
+                item.setFlag(QGraphicsItem.ItemIsSelectable, item.selectable)
                 self._group.addToGroup(item)
+
             self._group.show()
             self._group = None
             self._group_child_items.clear()
@@ -220,16 +223,19 @@ class ExtendedScene(QGraphicsView):
     def _remove_items_from_edited_group(self) -> None:
         self._group_child_items = []
         items = self._scene.selectedItems()
-        if len(items) == 1 and isinstance(items[0], ComponentGroup):
-            self._group = items[0]
+        self._group = items[0] if len(items) == 1 and isinstance(items[0], ComponentGroup) else None
 
-            for component in self._components:
-                if component is not self._group:
-                    component.setFlag(QGraphicsItem.ItemIsSelectable, False)
+        for component in self._components:
+            if component is not self._group:
+                component.setFlag(QGraphicsItem.ItemIsMovable, False)
+                component.setFlag(QGraphicsItem.ItemIsSelectable, False)
 
+        if self._group:
             for child_item in self._group.set_edit_group_mode():
                 self._group_child_items.append(child_item)
                 child_item.setFlag(QGraphicsItem.ItemIsMovable, True)
+                child_item.setFlag(QGraphicsItem.ItemIsSelectable, True)
+
             self._group.hide()
 
     def _set_drag_component_mode(self, item: QGraphicsItem) -> bool:
