@@ -19,6 +19,7 @@ class ExtendedScene(QGraphicsView):
 
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
+    _edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
     middle_clicked: pyqtSignal = pyqtSignal(QPointF)
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -96,12 +97,15 @@ class ExtendedScene(QGraphicsView):
             item.setFlag(QGraphicsItem.ItemIsSelectable, item.selectable)
             group.addToGroup(item)
 
-        if not self._components_in_operation and self._group:
-            self._scene.removeItem(self._group)
-        elif self._components_in_operation and not self._group:
-            self.add_component(group)
+        if not self._components_in_operation:
+            if self._group:
+                self._scene.removeItem(self._group)
         else:
-            group.show()
+            if not self._group:
+                self.add_component(group)
+            else:
+                self._group.show()
+            self._edited_group_component_signal.emit(group)
 
         self._group = None
         self._components_in_operation.clear()
@@ -342,12 +346,11 @@ class ExtendedScene(QGraphicsView):
             return
 
         for item in self._scene.selectedItems():
-            self._scene.removeItem(item)
-            if self._mode is SceneMode.EDIT_GROUP:
-                try:
-                    self._components_in_operation.remove(item)
-                except ValueError:
-                    pass
+            self.remove_component(item)
+            try:
+                self._components_in_operation.remove(item)
+            except ValueError:
+                pass
 
     def is_drag_allowed(self) -> bool:
         """
