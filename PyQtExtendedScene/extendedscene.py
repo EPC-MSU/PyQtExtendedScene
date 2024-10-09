@@ -19,7 +19,7 @@ class ExtendedScene(QGraphicsView):
 
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
-    _edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
+    edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
     middle_clicked: pyqtSignal = pyqtSignal(QPointF)
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -105,7 +105,7 @@ class ExtendedScene(QGraphicsView):
                 self.add_component(group)
             else:
                 self._group.show()
-            self._edited_group_component_signal.emit(group)
+            self.edited_group_component_signal.emit(group)
 
         self._group = None
         self._components_in_operation.clear()
