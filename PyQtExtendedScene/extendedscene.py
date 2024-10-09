@@ -96,7 +96,7 @@ class ExtendedScene(QGraphicsView):
             group.addToGroup(item)
 
         if not self._components_in_operation and self._group:
-            self._scene.removeItem(group)
+            self._scene.removeItem(self._group)
         elif self._components_in_operation and not self._group:
             self.add_component(group)
         else:
@@ -130,7 +130,7 @@ class ExtendedScene(QGraphicsView):
 
         for item in self.items(event.pos()):
             if isinstance(item, (AbstractComponent, BaseComponent)):
-                return item
+                return item.group() if item.group() else item
 
         return None
 
@@ -158,7 +158,8 @@ class ExtendedScene(QGraphicsView):
             if item and self._set_resize_mode_for_scalable_component(item):
                 return
 
-            if item and self._set_drag_component_mode(item):
+            if item:
+                self._set_drag_component_mode(item)
                 return
 
         if item:
@@ -234,19 +235,15 @@ class ExtendedScene(QGraphicsView):
 
             self._group.hide()
 
-    def _set_drag_component_mode(self, item: QGraphicsItem) -> bool:
+    def _set_drag_component_mode(self, item: QGraphicsItem) -> None:
         """
         :param item: component that will be dragged.
-        :return: True if the mode is set.
         """
 
-        if item.selectable:
-            if not item.isSelected() and item.unique_selection:
-                self.remove_all_selections()
-            self._operation = ExtendedScene.Operation.DRAG_COMPONENT
-            return True
-
-        return False
+        self.remove_all_selections()
+        item.setSelected(True)
+        self._current_component = item
+        self._operation = ExtendedScene.Operation.DRAG_COMPONENT
 
     def _set_no_action_mode(self) -> None:
         self.setDragMode(QGraphicsView.NoDrag)
