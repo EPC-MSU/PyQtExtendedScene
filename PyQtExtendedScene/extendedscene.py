@@ -242,7 +242,6 @@ class ExtendedScene(QGraphicsView):
 
         self.remove_all_selections()
         item.setSelected(True)
-        self._current_component = item
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
 
     def _set_no_action_mode(self) -> None:
