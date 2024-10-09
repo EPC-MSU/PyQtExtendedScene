@@ -111,6 +111,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
         for item in self.childItems():
             self.removeFromGroup(item)
+            self.scene().removeItem(item)
             yield item
 
     def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left: float, top: float) -> None:

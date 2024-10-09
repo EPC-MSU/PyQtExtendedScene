@@ -91,6 +91,7 @@ class ExtendedScene(QGraphicsView):
         group = self._group or ComponentGroup()
 
         for item in self._components_in_operation:
+            self.remove_component(item)
             item.setFlag(QGraphicsItem.ItemIsMovable, item.draggable)
             item.setFlag(QGraphicsItem.ItemIsSelectable, item.selectable)
             group.addToGroup(item)
@@ -229,6 +230,7 @@ class ExtendedScene(QGraphicsView):
 
         if self._group:
             for child_item in self._group.set_edit_group_mode():
+                self.add_component(child_item)
                 self._components_in_operation.append(child_item)
                 child_item.setFlag(QGraphicsItem.ItemIsMovable, True)
                 child_item.setFlag(QGraphicsItem.ItemIsSelectable, True)
