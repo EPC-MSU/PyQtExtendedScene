@@ -83,7 +83,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         :param event: mouse event.
         """
 
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and self.flags() & QGraphicsItem.ItemIsSelectable:
             for item in self.childItems():
                 if item.contains(self.mapToItem(item, event.pos())):
                     item.set_selected_at_group(True)
