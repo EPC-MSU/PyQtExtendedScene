@@ -6,10 +6,10 @@ from PyQt5.QtWidgets import QApplication
 
 
 try:
-    from PyQtExtendedScene import ExtendedScene, ScalableComponent
+    from PyQtExtendedScene import ExtendedScene, RectComponent
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from PyQtExtendedScene import ExtendedScene, ScalableComponent
+    from PyQtExtendedScene import ExtendedScene, RectComponent
 
 
 if __name__ == "__main__":
@@ -28,11 +28,11 @@ if __name__ == "__main__":
         for j in range(m):
             x = j * (width + dx)
             y = i * (height + dy)
-            component = ScalableComponent(QRectF(0, 0, width, height))
+            component = RectComponent(QRectF(0, 0, width, height))
             component.setPos(x, y)
             widget.add_component(component)
 
-    widget._scene.setSceneRect(QRectF(QPointF(-500, -500), QPointF(1500, 1500)))
+    widget.scene().setSceneRect(QRectF(QPointF(-500, -500), QPointF(1500, 1500)))
 
     widget.show()
     sys.exit(app.exec_())

@@ -6,11 +6,11 @@ from PyQt5.QtWidgets import QDialog, QApplication, QHBoxLayout, QRadioButton, QV
 
 
 try:
-    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, ScalableComponent
+    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent
     from PyQtExtendedScene.scenemode import SceneMode
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, ScalableComponent
+    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent
     from PyQtExtendedScene.scenemode import SceneMode
 
 
@@ -38,7 +38,7 @@ class Dialog(QDialog):
         point_component.setPos(100, 300)
         widget.add_component(point_component)
 
-        rect_component = ScalableComponent(QRectF(0, 0, 100, 150), draggable=False, selectable=True)
+        rect_component = RectComponent(QRectF(0, 0, 100, 150), draggable=False, selectable=True)
         rect_component.setPos(100, 100)
         rect_component.setBrush(QBrush(QColor("red")))
         widget.add_component(rect_component)
@@ -48,7 +48,7 @@ class Dialog(QDialog):
         point_component_for_group.setPos(400, 300)
         # widget.add_component(point_component_for_group)
 
-        rect_component_for_group = ScalableComponent(QRectF(0, 0, 200, 100))
+        rect_component_for_group = RectComponent(QRectF(0, 0, 200, 100))
         rect_component_for_group.setBrush(QBrush(QColor("green")))
         rect_component_for_group.setPos(400, 100)
         # widget.add_component(rect_component_for_group)

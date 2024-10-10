@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPointF, Qt, QTimer
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent
 from . import utils as ut
 from .basecomponent import BaseComponent
-from .scalablecomponent import ScalableComponent
+from .rectcomponent import RectComponent
 from .scenemode import SceneMode
 from .sender import get_signal_sender
 
@@ -39,7 +39,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         if hasattr(item, "set_scene_mode"):
             self._scene_mode_changed.connect(item.set_scene_mode)
 
-        if self._animation_timer and isinstance(item, ScalableComponent):
+        if self._animation_timer and isinstance(item, RectComponent):
             self._animation_timer.timeout.connect(item.update_selection)
 
         super().addToGroup(item)
@@ -75,7 +75,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         """
 
         for item in self.childItems():
-            if isinstance(item, ScalableComponent):
+            if isinstance(item, RectComponent):
                 item.hoverEnterEvent(event)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
@@ -96,7 +96,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         """
 
         for item in self.childItems():
-            if isinstance(item, ScalableComponent):
+            if isinstance(item, RectComponent):
                 if self._animation_timer:
                     self._animation_timer.disconnect(item.update_selection)
                 if timer is not None:
