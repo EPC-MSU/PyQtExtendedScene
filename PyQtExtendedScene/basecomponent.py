@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Tuple
 from PyQt5.QtCore import QPointF
 from PyQt5.QtWidgets import QGraphicsItem
 from .scenemode import SceneMode
@@ -65,6 +65,13 @@ class BaseComponent:
         self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
         self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
+
+    def copy(self) -> Tuple["BaseComponent", QPointF]:
+        """
+        :return: copied component and its current position.
+        """
+
+        raise NotImplementedError(f"Method 'copy' not implemented in class '{self.__class__.__name__}'")
 
     def handle_selection(self, selected: bool = True) -> None:
         """
