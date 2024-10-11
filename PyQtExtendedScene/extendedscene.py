@@ -1,6 +1,7 @@
 from enum import auto, Enum
-from typing import List, Optional, Tuple
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer
+from functools import partial
+from typing import Any, Dict, List, Optional, Tuple
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer, pyqtSlot
 from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
@@ -57,6 +58,7 @@ class ExtendedScene(QGraphicsView):
         self._group: Optional[ComponentGroup] = None
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
+        self._pasted_components: Dict[QGraphicsItem, Any] = dict()
         self._scale: float = 1.0
         self._scene_mode: SceneMode = SceneMode.NO_ACTION
         self._shift_pressed: bool = False
@@ -146,6 +148,23 @@ class ExtendedScene(QGraphicsView):
 
     def _handle_component_resize_by_mouse(self) -> None:
         self._current_component.resize_by_mouse(self._mouse_pos)
+
+    @pyqtSlot(QGraphicsItem, bool)
+    def _handle_deselecting_pasted_component(self, component: QGraphicsItem, selected: bool) -> None:
+        """
+        :param component:
+        :param selected:
+        """
+
+        if selected:
+            return
+
+        if component in self._pasted_components:
+            component._selection_signal.disconnect(self._pasted_components[component])
+            self._pasted_components.pop(component)
+            component.set_scene_mode(self._scene_mode)
+            if self._scene_mode is not SceneMode.NO_ACTION:
+                self._components_in_operation.append(component)
 
     def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
         """
@@ -417,7 +436,7 @@ class ExtendedScene(QGraphicsView):
         super().mouseReleaseEvent(event)
 
     def paste_copied_components(self) -> None:
-        if self._scene_mode is not SceneMode.EDIT:
+        if self._operation is not ExtendedScene.Operation.NO_ACTION or not self._copied_components:
             return
 
         self.remove_all_selections()
@@ -427,7 +446,12 @@ class ExtendedScene(QGraphicsView):
             item_to_paste = item.copy()[0]
             item_to_paste.set_position_after_paste(self._mouse_pos, item_pos, left, top)
             self.add_component(item_to_paste)
+            item_to_paste.setFlag(QGraphicsItem.ItemIsMovable, True)
+            item_to_paste.setFlag(QGraphicsItem.ItemIsSelectable, True)
             item_to_paste.setSelected(True)
+            slot_to_deselect = partial(self._handle_deselecting_pasted_component, item_to_paste)
+            item_to_paste._selection_signal.connect(slot_to_deselect)
+            self._pasted_components[item_to_paste] = slot_to_deselect
 
     def remove_all_selections(self, components: Optional[List[QGraphicsItem]] = None) -> None:
         """

@@ -19,6 +19,13 @@ def get_signal_sender(value_type: type) -> type:
 
             self._signal.connect(func)
 
+        def disconnect(self, func) -> None:
+            """
+            :param func: callback function to be unhooked from the signal.
+            """
+
+            self._signal.disconnect(func)
+
         def emit(self, value) -> None:
             """
             :param value: value to send.
