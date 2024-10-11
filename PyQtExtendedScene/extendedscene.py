@@ -163,7 +163,14 @@ class ExtendedScene(QGraphicsView):
             component.selection_signal.disconnect(self._pasted_components[component])
             self._pasted_components.pop(component)
             component.set_scene_mode(self._scene_mode)
-            if self._scene_mode is not SceneMode.NO_ACTION:
+
+            if self._scene_mode is SceneMode.EDIT_GROUP and isinstance(component, ComponentGroup):
+                self.remove_component(component)
+                for item in component.childItems():
+                    component.removeFromGroup(item)
+                    self.add_component(item)
+                    self._components_in_operation.append(item)
+            elif self._scene_mode is SceneMode.EDIT:
                 self._components_in_operation.append(component)
 
     def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
