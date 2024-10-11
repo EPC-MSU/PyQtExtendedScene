@@ -152,8 +152,8 @@ class ExtendedScene(QGraphicsView):
     @pyqtSlot(QGraphicsItem, bool)
     def _handle_deselecting_pasted_component(self, component: QGraphicsItem, selected: bool) -> None:
         """
-        :param component:
-        :param selected:
+        :param component: a component that was pasted after copying and then became unselected;
+        :param selected: if False, then the component has become unselected.
         """
 
         if selected:
