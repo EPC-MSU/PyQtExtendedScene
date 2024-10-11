@@ -442,14 +442,19 @@ class ExtendedScene(QGraphicsView):
 
         super().mouseReleaseEvent(event)
 
-    def paste_copied_components(self) -> None:
-        if self._operation is not ExtendedScene.Operation.NO_ACTION or not self._copied_components:
+    def paste_copied_components(self, copied_components: Optional[List[Tuple[BaseComponent, QPointF]]] = None) -> None:
+        """
+        :param copied_components: list of copied components with their positions to be pasted.
+        """
+
+        copied_components = copied_components or self._copied_components
+        if self._operation is not ExtendedScene.Operation.NO_ACTION or not copied_components:
             return
 
         self.remove_all_selections()
-        left, top = ut.get_left_top_pos([pos for _, pos in self._copied_components])
+        left, top = ut.get_left_top_pos([pos for _, pos in copied_components])
 
-        for item, item_pos in self._copied_components:
+        for item, item_pos in copied_components:
             item_to_paste = item.copy()[0]
             item_to_paste.set_position_after_paste(self._mouse_pos, item_pos, left, top)
             self.add_component(item_to_paste)
