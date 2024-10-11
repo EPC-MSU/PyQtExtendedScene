@@ -164,12 +164,15 @@ class ExtendedScene(QGraphicsView):
             self._pasted_components.pop(component)
             component.set_scene_mode(self._scene_mode)
 
-            if self._scene_mode is SceneMode.EDIT_GROUP and isinstance(component, ComponentGroup):
-                self.remove_component(component)
-                for item in component.childItems():
-                    component.removeFromGroup(item)
-                    self.add_component(item)
-                    self._components_in_operation.append(item)
+            if self._scene_mode is SceneMode.EDIT_GROUP:
+                if isinstance(component, ComponentGroup):
+                    self.remove_component(component)
+                    for item in component.childItems():
+                        component.removeFromGroup(item)
+                        self.add_component(item)
+                        self._components_in_operation.append(item)
+                else:
+                    self._components_in_operation.append(component)
             elif self._scene_mode is SceneMode.EDIT:
                 self._components_in_operation.append(component)
 
