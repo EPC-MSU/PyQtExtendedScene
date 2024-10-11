@@ -58,7 +58,7 @@ class ExtendedScene(QGraphicsView):
         self._group: Optional[ComponentGroup] = None
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
-        self._pasted_components: Dict[QGraphicsItem, Any] = dict()
+        self._pasted_components: Dict[BaseComponent, Any] = dict()
         self._scale: float = 1.0
         self._scene_mode: SceneMode = SceneMode.NO_ACTION
         self._shift_pressed: bool = False
@@ -149,8 +149,8 @@ class ExtendedScene(QGraphicsView):
     def _handle_component_resize_by_mouse(self) -> None:
         self._current_component.resize_by_mouse(self._mouse_pos)
 
-    @pyqtSlot(QGraphicsItem, bool)
-    def _handle_deselecting_pasted_component(self, component: QGraphicsItem, selected: bool) -> None:
+    @pyqtSlot(BaseComponent, bool)
+    def _handle_deselecting_pasted_component(self, component: BaseComponent, selected: bool) -> None:
         """
         :param component: a component that was pasted after copying and then became unselected;
         :param selected: if False, then the component has become unselected.
@@ -160,7 +160,7 @@ class ExtendedScene(QGraphicsView):
             return
 
         if component in self._pasted_components:
-            component._selection_signal.disconnect(self._pasted_components[component])
+            component.selection_signal.disconnect(self._pasted_components[component])
             self._pasted_components.pop(component)
             component.set_scene_mode(self._scene_mode)
             if self._scene_mode is not SceneMode.NO_ACTION:
@@ -450,7 +450,7 @@ class ExtendedScene(QGraphicsView):
             item_to_paste.setFlag(QGraphicsItem.ItemIsSelectable, True)
             item_to_paste.setSelected(True)
             slot_to_deselect = partial(self._handle_deselecting_pasted_component, item_to_paste)
-            item_to_paste._selection_signal.connect(slot_to_deselect)
+            item_to_paste.selection_signal.connect(slot_to_deselect)
             self._pasted_components[item_to_paste] = slot_to_deselect
 
     def remove_all_selections(self, components: Optional[List[QGraphicsItem]] = None) -> None:

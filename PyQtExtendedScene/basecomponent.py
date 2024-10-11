@@ -31,9 +31,9 @@ class BaseComponent:
         self._scene_mode: SceneMode = SceneMode.NO_ACTION
         self._selectable: bool = selectable
         self._selected_at_group: bool = False
-        self._selection_signal = get_signal_sender(bool)()
-        self._selection_signal.connect(self.handle_selection)
         self._unique_selection: bool = unique_selection
+        self.selection_signal = get_signal_sender(bool)()
+        self.selection_signal.connect(self.handle_selection)
 
         self._set_flags()
 
@@ -97,7 +97,7 @@ class BaseComponent:
         """
 
         if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
-            self._selection_signal.emit(value)
+            self.selection_signal.emit(value)
 
         for item_class in self.__class__.__bases__:
             if item_class != BaseComponent:
@@ -134,7 +134,7 @@ class BaseComponent:
         """
 
         self._selected_at_group = selected
-        self._selection_signal.emit(selected)
+        self.selection_signal.emit(selected)
 
     def update_scale(self, scale_factor: float) -> None:
         """
