@@ -343,9 +343,6 @@ class ExtendedScene(QGraphicsView):
                                    if isinstance(item, BaseComponent)]
 
     def delete_selected_components(self) -> None:
-        if self._scene_mode is SceneMode.NO_ACTION:
-            return
-
         for item in self.scene().selectedItems():
             self.remove_component(item)
             try:
