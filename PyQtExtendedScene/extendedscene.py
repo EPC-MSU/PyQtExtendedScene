@@ -454,11 +454,11 @@ class ExtendedScene(QGraphicsView):
             return
 
         self.remove_all_selections()
-        left, top = ut.get_left_top_pos([pos for _, pos in copied_components])
+        left_top = ut.get_left_top_pos([pos for _, pos in copied_components])
 
         for item, item_pos in copied_components:
             item_to_paste = item.copy()[0]
-            item_to_paste.set_position_after_paste(self._mouse_pos, item_pos, left, top)
+            item_to_paste.set_position_after_paste(self._mouse_pos, item_pos, left_top)
             self.add_component(item_to_paste)
             item_to_paste.setFlag(QGraphicsItem.ItemIsMovable, True)
             item_to_paste.setFlag(QGraphicsItem.ItemIsSelectable, True)

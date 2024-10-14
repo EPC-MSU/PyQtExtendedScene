@@ -110,17 +110,14 @@ class BaseComponent:
             if item_class != BaseComponent:
                 return item_class().itemChange(change, value)
 
-    def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left: float, top: float) -> None:
+    def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left_top: QPointF) -> None:
         """
         :param mouse_pos: mouse position;
         :param item_pos: position of the component when copying;
-        :param left: x coordinate in the scene reference system that should be at the mouse position;
-        :param top: y coordinate in the scene reference system that should be at the mouse position.
+        :param left_top: x and y coordinates in the scene reference system that should be at the mouse position.
         """
 
-        new_item_x = mouse_pos.x() + item_pos.x() - left
-        new_item_y = mouse_pos.y() + item_pos.y() - top
-        self.setPos(new_item_x, new_item_y)
+        self.setPos(mouse_pos + item_pos - left_top)
 
     def set_scene_mode(self, mode: SceneMode) -> None:
         """
