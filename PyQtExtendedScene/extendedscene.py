@@ -1,7 +1,7 @@
 from enum import auto, Enum
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer, pyqtSlot
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
