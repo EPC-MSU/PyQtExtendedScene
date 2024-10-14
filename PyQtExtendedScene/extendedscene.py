@@ -196,7 +196,7 @@ class ExtendedScene(QGraphicsView):
                 return
 
             if item:
-                self._set_drag_component_mode(item)
+                self._set_drag_component_mode()
                 return
 
         if item:
@@ -272,13 +272,7 @@ class ExtendedScene(QGraphicsView):
 
             self._group.hide()
 
-    def _set_drag_component_mode(self, item: QGraphicsItem) -> None:
-        """
-        :param item: component that will be dragged.
-        """
-
-        self.remove_all_selections()
-        item.setSelected(True)
+    def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
 
     def _set_no_action_mode(self) -> None:
