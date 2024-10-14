@@ -6,12 +6,10 @@ from PyQt5.QtWidgets import QDialog, QApplication, QHBoxLayout, QRadioButton, QV
 
 
 try:
-    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent
-    from PyQtExtendedScene.scenemode import SceneMode
+    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent, SceneMode
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent
-    from PyQtExtendedScene.scenemode import SceneMode
+    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent, SceneMode
 
 
 class Dialog(QDialog):

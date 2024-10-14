@@ -1,7 +1,7 @@
 from enum import auto, Enum
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, QSize, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
@@ -491,16 +491,15 @@ class ExtendedScene(QGraphicsView):
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.disconnect(component.update_selection)
 
-    def scale_to_window_size(self, width: float, height: float) -> None:
+    def scale_to_window_size(self, size: QSize) -> None:
         """
         Scale to window size.
         For example, if you have window 600x600 and workspace background image 1200x1200, image will be scaled in 4x.
-        :param width: window width;
-        :param height: window height.
+        :param size: window size.
         """
 
-        factor_x = width / self._background.pixmap().width()
-        factor_y = height / self._background.pixmap().height()
+        factor_x = size.width() / self._background.pixmap().width()
+        factor_y = size.height() / self._background.pixmap().height()
         factor = max(min(factor_x, factor_y), ExtendedScene.MIN_SCALE)
         self.resetTransform()
         self._scale = factor
