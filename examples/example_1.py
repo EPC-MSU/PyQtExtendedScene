@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog
 
 
 try:
-    from PyQtExtendedScene import ExtendedScene
+    from PyQtExtendedScene import ExtendedScene, PointComponent
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from PyQtExtendedScene import ExtendedScene, PointComponent
