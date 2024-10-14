@@ -28,7 +28,7 @@ class BaseComponent:
 
         super().__init__()
         self._draggable: bool = draggable
-        self._scene_mode: SceneMode = SceneMode.NO_ACTION
+        self._scene_mode: SceneMode = SceneMode.NORMAL
         self._selectable: bool = selectable
         self._selected_at_group: bool = False
         self._unique_selection: bool = unique_selection
@@ -128,7 +128,7 @@ class BaseComponent:
         """
 
         self._scene_mode = mode
-        if self._scene_mode == SceneMode.NO_ACTION:
+        if self._scene_mode == SceneMode.NORMAL:
             self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
             self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
         elif self._scene_mode == SceneMode.EDIT and not self.is_in_group():

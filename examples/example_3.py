@@ -89,7 +89,7 @@ class Dialog(QDialog):
         elif self.sender() == self.button_edit_group:
             mode = SceneMode.EDIT_GROUP
         else:
-            mode = SceneMode.NO_ACTION
+            mode = SceneMode.NORMAL
         self.extended_scene.set_scene_mode(mode)
 
 

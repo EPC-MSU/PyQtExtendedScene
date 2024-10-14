@@ -8,4 +8,4 @@ class SceneMode(Enum):
 
     EDIT = auto()  # individual component editing mode
     EDIT_GROUP = auto()  # group component editing mode
-    NO_ACTION = auto()  # normal mode
+    NORMAL = auto()  # normal mode

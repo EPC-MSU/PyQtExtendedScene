@@ -5,7 +5,6 @@ from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt, QTimer, pyqtSl
 from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
-from .abstractcomponent import AbstractComponent
 from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
 from .pointcomponent import PointComponent
@@ -60,7 +59,7 @@ class ExtendedScene(QGraphicsView):
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: Dict[BaseComponent, Any] = dict()
         self._scale: float = 1.0
-        self._scene_mode: SceneMode = SceneMode.NO_ACTION
+        self._scene_mode: SceneMode = SceneMode.NORMAL
         self._shift_pressed: bool = False
         self._zoom_speed: float = zoom_speed
 
@@ -135,7 +134,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         for item in self.items(event.pos()):
-            if isinstance(item, (AbstractComponent, BaseComponent)):
+            if isinstance(item, BaseComponent):
                 return item.group() if item.group() else item
 
         return None
@@ -232,7 +231,7 @@ class ExtendedScene(QGraphicsView):
         else:
             self.right_clicked.emit(pos)
 
-        if self._scene_mode is SceneMode.NO_ACTION:
+        if self._scene_mode is SceneMode.NORMAL:
             self._set_select_component_mode()
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if self._shift_pressed:
@@ -241,7 +240,7 @@ class ExtendedScene(QGraphicsView):
                 self._start_create_rect_component_by_mouse(pos)
 
     def _handle_mouse_right_button_release(self) -> None:
-        if self._scene_mode is SceneMode.NO_ACTION:
+        if self._scene_mode is SceneMode.NORMAL:
             self._set_no_action_mode()
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
@@ -391,7 +390,7 @@ class ExtendedScene(QGraphicsView):
         :param event: key event.
         """
 
-        if event.key() == Qt.Key_Shift and self._scene_mode is not SceneMode.NO_ACTION:
+        if event.key() == Qt.Key_Shift and self._scene_mode is not SceneMode.NORMAL:
             self._shift_pressed = True
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
@@ -399,7 +398,7 @@ class ExtendedScene(QGraphicsView):
         :param event: key event.
         """
 
-        if event.key() == Qt.Key_Shift and self._scene_mode is not SceneMode.NO_ACTION:
+        if event.key() == Qt.Key_Shift and self._scene_mode is not SceneMode.NORMAL:
             self._shift_pressed = False
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -489,16 +488,16 @@ class ExtendedScene(QGraphicsView):
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.disconnect(component.update_selection)
 
-    def scale_to_window_size(self, x: float, y: float) -> None:
+    def scale_to_window_size(self, width: float, height: float) -> None:
         """
         Scale to window size.
         For example, if you have window 600x600 and workspace background image 1200x1200, image will be scaled in 4x.
-        :param x: window width;
-        :param y: window height.
+        :param width: window width;
+        :param height: window height.
         """
 
-        factor_x = x / self._background.pixmap().width()
-        factor_y = y / self._background.pixmap().height()
+        factor_x = width / self._background.pixmap().width()
+        factor_y = height / self._background.pixmap().height()
         factor = max(min(factor_x, factor_y), ExtendedScene.MIN_SCALE)
         self.resetTransform()
         self._scale = factor

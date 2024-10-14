@@ -44,7 +44,7 @@
 По умолчанию сцена находиться в обычном режиме. Для перехода в обычный режим нужно вызвать метод:
 
 ```python
-scene.set_scene_mode(SceneMode.NO_ACTION)
+scene.set_scene_mode(SceneMode.NORMAL)
 ```
 
 В обычном режиме можно:
