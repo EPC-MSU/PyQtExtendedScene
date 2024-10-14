@@ -78,15 +78,8 @@ class ExtendedScene(QGraphicsView):
 
         self._animation_timer: QTimer = QTimer()
         self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
-        self._shortcut_copy: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self)
-        self._shortcut_copy.setContext(Qt.WindowShortcut)
-        self._shortcut_copy.activated.connect(self.copy_selected_components)
-        self._shortcut_delete: QShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
-        self._shortcut_delete.setContext(Qt.WindowShortcut)
-        self._shortcut_delete.activated.connect(self.delete_selected_components)
-        self._shortcut_paste: QShortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self)
-        self._shortcut_paste.setContext(Qt.WindowShortcut)
-        self._shortcut_paste.activated.connect(self.paste_copied_components)
+
+        self._create_shortcuts()
 
     def _add_items_to_edited_group(self) -> None:
         if not self._components_in_operation:
@@ -109,6 +102,18 @@ class ExtendedScene(QGraphicsView):
 
         self._group = None
         self._components_in_operation.clear()
+
+    def _create_shortcuts(self) -> None:
+        combination_and_slots = {Qt.CTRL + Qt.Key_C: self.copy_selected_components,
+                                 Qt.CTRL + Qt.Key_X: self.cut_selected_components,
+                                 Qt.Key_Delete: self.delete_selected_components,
+                                 Qt.CTRL + Qt.Key_V: self.paste_copied_components}
+        self._shortcuts: List[QShortcut] = []
+        for combination, slot in combination_and_slots.items():
+            shortcut = QShortcut(QKeySequence(combination), self)
+            shortcut.setContext(Qt.WindowShortcut)
+            shortcut.activated.connect(slot)
+            self._shortcuts.append(shortcut)
 
     def _finish_create_point_component_by_mouse(self) -> None:
         self._current_component.setSelected(False)
@@ -369,6 +374,10 @@ class ExtendedScene(QGraphicsView):
     def copy_selected_components(self) -> None:
         self._copied_components = [item.copy() for item in self.scene().selectedItems()
                                    if isinstance(item, BaseComponent)]
+
+    def cut_selected_components(self) -> None:
+        self.copy_selected_components()
+        self.delete_selected_components()
 
     def delete_selected_components(self) -> None:
         for item in self.scene().selectedItems():
