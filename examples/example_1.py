@@ -40,9 +40,19 @@ class MyComponent(PointComponent):
         return self._descr
 
 
-def left_click(component: MyComponent) -> None:
+def handle_component_move(component: MyComponent) -> None:
+    if isinstance(component, MyComponent):
+        print(f"Move '{component.description}'")
+
+
+def handle_left_click(component: MyComponent) -> None:
     if isinstance(component, MyComponent):
         print(f"Left click on '{component.description}'")
+
+
+def handle_right_click(component: MyComponent) -> None:
+    if isinstance(component, MyComponent):
+        print(f"Right click on '{component.description}'")
 
 
 if __name__ == "__main__":
@@ -60,7 +70,9 @@ if __name__ == "__main__":
     widget.add_component(MyComponent(100, 200, "My component 2"))
 
     # Handle left click
-    widget.on_component_left_click.connect(left_click)
+    widget.on_component_left_click.connect(handle_left_click)
+    widget.on_component_moved.connect(handle_component_move)
+    widget.on_component_right_click.connect(handle_right_click)
     widget.show()
 
     sys.exit(app.exec_())

@@ -195,11 +195,8 @@ class ExtendedScene(QGraphicsView):
             if item and self._set_resize_mode_for_rect_component(item):
                 return
 
-            if item:
-                self._set_drag_component_mode()
-                return
-
         if item:
+            self._set_drag_component_mode()
             return
 
         # We are in drag board mode now
