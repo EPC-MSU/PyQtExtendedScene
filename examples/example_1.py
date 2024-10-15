@@ -1,7 +1,7 @@
 import os
 import sys
 from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QApplication, QFileDialog
+from PyQt5.QtWidgets import QApplication
 
 
 try:
@@ -23,7 +23,7 @@ class MyComponent(PointComponent):
         :param description: some description for the component.
         """
 
-        super().__init__(MyComponent.NORMAL_SIZE, draggable=True, selectable=True, unique_selection=True)
+        super().__init__(MyComponent.NORMAL_SIZE, draggable=True, selectable=True)
         # Add description to our object - it will be used in "click" callback function
         self._descr: str = description
         # ... yellow circle
@@ -31,9 +31,9 @@ class MyComponent(PointComponent):
         self.setPos(x, y)
 
     @property
-    # That is our own property
     def description(self) -> str:
         """
+        That is our own property.
         :return: description for the component.
         """
 
@@ -50,17 +50,13 @@ if __name__ == "__main__":
 
     # Open workspace background image
     path_to_image = os.path.join("images", "workspace.png")
-    if not os.path.isfile(path_to_image):
-        path_to_image = QFileDialog().getOpenFileName(caption="Open workspace image",
-                                                      filter="Image Files (*.png *.jpg *.bmp *.tiff)")[0]
-
     image = QPixmap(path_to_image)
     image = image.scaled(800, 600)
-    # Create workspace!
+    # Create workspace
     widget = ExtendedScene(image)
 
     # Let's add some components to our workspace
-    widget.add_component(MyComponent(10, 10, "My component 1"))
+    widget.add_component(MyComponent(500, 400, "My component 1"))
     widget.add_component(MyComponent(100, 200, "My component 2"))
 
     # Handle left click

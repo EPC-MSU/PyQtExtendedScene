@@ -4,8 +4,6 @@ PyQtExtendedScene is a little library for creating workspaces.
 
 Having described the method of drawing your components, with this library you get (draggable) workspace (scene) where the components you described can be selected, moved, deleted, etc. The scene itself can be increased, reduced, the work area may be moved.
 
-In short, with this library you can create minimalistic (very minimalistic) similarities of such programs as AutoCAD, Labview, yEd, etc.
-
 Repository: https://github.com/EPC-MSU/PyQtExtendedScene
 
 ## Installation
@@ -20,66 +18,57 @@ pip install PyQtExtendedScene
 ```Python
 import os
 import sys
-from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
-from PyQtExtendedScene import AbstractComponent, ExtendedScene
+from PyQt5.QtWidgets import QApplication
+from PyQtExtendedScene import ExtendedScene, PointComponent
 
 
 # Let's describe our own component
-class MyComponent(AbstractComponent):
-    
-    selected_size = 20
-    normal_size = 10
+class MyComponent(PointComponent):
 
-    def __init__(self, x: float, y: float, descr: str = "") -> None:
-        super().__init__(draggable=True, selectable=True, unique_selection=True)
-        self._r = self.normal_size
+    NORMAL_SIZE: float = 10
 
-        self.setPos(QPointF(x, y))
+    def __init__(self, x: float, y: float, description: str = "") -> None:
+        """
+        :param x: horizontal coordinate for the component;
+        :param y: vertical coordinate for the component;
+        :param description: some description for the component.
+        """
 
-        # We must describe how to draw our own component. Our own component will be just a circle
-        self._item = QGraphicsEllipseItem(-self._r, -self._r, self._r * 2, self._r * 2, self)
-        # ... yellow circle
-        self._item.setBrush(QBrush(QColor(0xFFFF00)))
-
+        super().__init__(MyComponent.NORMAL_SIZE, draggable=True, selectable=True)
         # Add description to our object - it will be used in "click" callback function
-        self._descr = descr
-
-    # We must override parent method "select" because our component changes shape when selected
-    def select(self, selected: bool = True) -> None:
-        # Radius of our circle changes when selected
-        self._r = self.selected_size if selected else self.normal_size
-        # redraw our object with new radius
-        self._item.setRect(QRectF(-self._r, -self._r, self._r * 2, self._r * 2))
+        self._descr: str = description
+        # ... yellow circle
+        self.setBrush(QBrush(QColor(0xFFFF00)))
+        self.setPos(x, y)
 
     @property
-    # That is our own property
     def description(self) -> str:
+        """
+        That is our own property.
+        :return: description for the component.
+        """
+
         return self._descr
 
-    
-def left_click(component) -> None:
+
+def left_click(component: MyComponent) -> None:
     if isinstance(component, MyComponent):
         print(f"Left click on '{component.description}'")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Open workspace background image
-    path_to_image = "workspace.png"
-    if not os.path.isfile(path_to_image):
-        path_to_image = QFileDialog().getOpenFileName(caption="Open workspace image",
-                                                      filter="Image Files (*.png *.jpg *.bmp *.tiff)")[0]
-
+    path_to_image = os.path.join("images", "workspace.png")
     image = QPixmap(path_to_image)
     image = image.scaled(800, 600)
-    # Create workspace!
+    # Create workspace
     widget = ExtendedScene(image)
 
     # Let's add some components to our workspace
-    widget.add_component(MyComponent(10, 10, "My component 1"))
+    widget.add_component(MyComponent(500, 400, "My component 1"))
     widget.add_component(MyComponent(100, 200, "My component 2"))
 
     # Handle left click
