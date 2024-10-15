@@ -33,10 +33,8 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         :param item: item to be added to the group.
         """
 
-        if hasattr(item, "update_scale"):
+        if isinstance(item, BaseComponent):
             self._scale_changed.connect(item.update_scale)
-
-        if hasattr(item, "set_scene_mode"):
             self._scene_mode_changed.connect(item.set_scene_mode)
 
         if self._animation_timer and isinstance(item, RectComponent):

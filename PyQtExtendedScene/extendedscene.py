@@ -333,11 +333,11 @@ class ExtendedScene(QGraphicsView):
         self._components.append(component)
         self.scene().addItem(component)
 
-        component.update_scale(self._scale)
-        self.scale_changed.connect(component.update_scale)
-
-        component.set_scene_mode(self._scene_mode)
-        self.scene_mode_changed.connect(component.set_scene_mode)
+        if isinstance(component, BaseComponent):
+            component.update_scale(self._scale)
+            self.scale_changed.connect(component.update_scale)
+            component.set_scene_mode(self._scene_mode)
+            self.scene_mode_changed.connect(component.set_scene_mode)
 
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.connect(component.update_selection)
