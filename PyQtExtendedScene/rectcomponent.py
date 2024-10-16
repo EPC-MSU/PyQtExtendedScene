@@ -1,11 +1,12 @@
 import time
 from enum import auto, Enum
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
                              QStyleOptionGraphicsItem, QWidget)
 from .basecomponent import BaseComponent
+from .pointcomponent import PointComponent
 from .scenemode import SceneMode
 
 
@@ -256,6 +257,15 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         """
 
         return self._mode not in (RectComponent.Mode.MOVE, RectComponent.Mode.NO_ACTION)
+
+    def contains_point(self, point: Union[PointComponent, QPointF]) -> bool:
+        """
+        :param point: point to check.
+        :return: True if the point is inside the rectangle.
+        """
+
+        pos = point.pos() if isinstance(point, PointComponent) else point
+        return self.contains(self.mapFromScene(pos))
 
     def copy(self) -> Tuple["RectComponent", QPointF]:
         """
