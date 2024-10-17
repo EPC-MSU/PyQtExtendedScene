@@ -2,7 +2,7 @@ from enum import auto, Enum
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, QSize, Qt, QTimer
-from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPixmap, QWheelEvent
+from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
 from .basecomponent import BaseComponent
@@ -66,6 +66,7 @@ class ExtendedScene(QGraphicsView):
         self.setScene(QGraphicsScene())
         self._background: Optional[QGraphicsPixmapItem] = self.scene().addPixmap(background) if background else None
 
+        self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
