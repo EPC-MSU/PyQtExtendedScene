@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QStyle, QStyleOptionGraphicsItem, QWidget
@@ -38,6 +38,19 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         self.setZValue(PointComponent.Z_VALUE)
         self._set_rect(self._r)
 
+    @classmethod
+    def create_from_json(cls, data: Dict[str, Any]) -> Optional["PointComponent"]:
+        """
+        :param data: a dictionary with basic attributes that can be used to create an object.
+        :return: class instance.
+        """
+
+        pen = QPen(QBrush(QColor(data["pen_color"])), data["pen_width"])
+        component = PointComponent(data["radius"], pen, draggable=data["draggable"], selectable=data["selectable"],
+                                   unique_selection=data["unique_selection"])
+        component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
+        return component
+
     def _set_rect(self, radius: Optional[float]) -> None:
         """
         :param radius: point radius.
@@ -46,6 +59,18 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         if radius is not None:
             radius /= self._scale_factor
             self.setRect(-radius, -radius, 2 * radius, 2 * radius)
+
+    def convert_to_json(self) -> Dict[str, Any]:
+        """
+        :return: dictionary with basic object attributes.
+        """
+
+        return {**super().convert_to_json(),
+                "brush_color": self.brush().color().rgba(),
+                "brush_style": self.brush().style(),
+                "pen_color": self.pen().color().rgba(),
+                "pen_width": self.pen().widthF(),
+                "radius": self._r}
 
     def copy(self) -> Tuple["PointComponent", QPointF]:
         """

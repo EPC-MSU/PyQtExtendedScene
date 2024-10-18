@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Dict, Optional
 from PyQt5.QtCore import QPointF
 from PyQt5.QtWidgets import QGraphicsItem
 from .scenemode import SceneMode
@@ -37,6 +37,15 @@ class BaseComponent:
 
         self._set_flags()
 
+    @classmethod
+    def create_from_json(cls, data: Dict[str, Any]) -> Optional["BaseComponent"]:
+        """
+        :param data: a dictionary with basic attributes that can be used to create an object.
+        :return: class instance.
+        """
+
+        return None
+
     @property
     def draggable(self) -> bool:
         """
@@ -66,12 +75,16 @@ class BaseComponent:
         self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
         self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
 
-    def copy(self) -> Tuple["BaseComponent", QPointF]:
+    def convert_to_json(self) -> Dict[str, Any]:
         """
-        :return: copied component and its current position.
+        :return: dictionary with basic object attributes.
         """
 
-        raise NotImplementedError(f"Method 'copy' not implemented in class '{self.__class__.__name__}'")
+        return {"class": self.__class__.__name__,
+                "draggable": self._draggable,
+                "selectable": self._selectable,
+                "unique_selection": self._unique_selection,
+                "pos": (self.scenePos().x(), self.scenePos().y())}
 
     def handle_selection(self, selected: bool = True) -> None:
         """

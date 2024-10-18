@@ -1,6 +1,6 @@
 import time
 from enum import auto, Enum
-from typing import Callable, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
@@ -109,6 +109,18 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self.setZValue(RectComponent.Z_VALUE)
         if rect is not None:
             self.setRect(rect)
+
+    @classmethod
+    def create_from_json(cls, data: Dict[str, Any]) -> Optional["RectComponent"]:
+        """
+        :param data: a dictionary with basic attributes that can be used to create an object.
+        :return: class instance.
+        """
+
+        component = RectComponent(QRectF(*data["rect"]), QColor(data["pen_color"]), data["pen_width"],
+                                  data["draggable"], data["selectable"], data["unique_selection"])
+        component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
+        return component
 
     @staticmethod
     def _create_solid_pen(color: Optional[QColor] = None, width: Optional[float] = None) -> QPen:
@@ -266,6 +278,18 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
 
         pos = point.pos() if isinstance(point, PointComponent) else point
         return self.contains(self.mapFromScene(pos))
+
+    def convert_to_json(self) -> Dict[str, Any]:
+        """
+        :return: dictionary with basic object attributes.
+        """
+
+        return {**super().convert_to_json(),
+                "brush_color": self.brush().color().rgba(),
+                "brush_style": self.brush().style(),
+                "pen_color": self._solid_pen.color().rgba(),
+                "pen_width": self._solid_pen.widthF(),
+                "rect": (self.rect().x(), self.rect().y(), self.rect().width(), self.rect().height())}
 
     def copy(self) -> Tuple["RectComponent", QPointF]:
         """

@@ -1,7 +1,9 @@
+import json
 from enum import auto, Enum
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, QSize, Qt, QTimer
+from typing import Any, Dict, List, Optional
+from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRectF, QSize, Qt,
+                          QTimer)
 from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
@@ -17,6 +19,7 @@ class ExtendedScene(QGraphicsView):
     Widget for working with graphic objects.
     """
 
+    MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
     edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -51,7 +54,6 @@ class ExtendedScene(QGraphicsView):
         super().__init__(parent)
         self._components: List[QGraphicsItem] = []
         self._components_in_operation: List[QGraphicsItem] = []
-        self._copied_components: List[Tuple[BaseComponent, QPointF]] = []
         self._current_component: Optional[QGraphicsItem] = None
         self._drag_allowed: bool = True
         self._group: Optional[ComponentGroup] = None
@@ -251,6 +253,35 @@ class ExtendedScene(QGraphicsView):
             elif isinstance(self._current_component, RectComponent):
                 self._finish_create_rect_component_by_mouse()
 
+    def _paste_copied_components(self, copied_components: List[Dict[str, Any]]) -> None:
+        """
+        :param copied_components: list of copied components with their positions to be pasted.
+        """
+
+        if self._operation is not ExtendedScene.Operation.NO_ACTION or not copied_components:
+            return
+
+        self.remove_all_selections()
+        left_top = ut.get_left_top_pos([QPointF(*component_data["pos"]) for component_data in copied_components])
+
+        for component_data in copied_components:
+            component_class = ut.get_class_by_name(component_data["class"])
+            if not component_class or not hasattr(component_class, "create_from_json"):
+                continue
+
+            component = component_class.create_from_json(component_data)
+            if not component:
+                continue
+
+            component.set_position_after_paste(self._mouse_pos, QPointF(*component_data["pos"]), left_top)
+            self.add_component(component)
+            component.setFlag(QGraphicsItem.ItemIsMovable, True)
+            component.setFlag(QGraphicsItem.ItemIsSelectable, True)
+            component.setSelected(True)
+            slot_to_deselect = partial(self._handle_deselecting_pasted_component, component)
+            component.selection_signal.connect(slot_to_deselect)
+            self._pasted_components[component] = slot_to_deselect
+
     def _remove_items_from_edited_group(self) -> None:
         self._components_in_operation = []
         items = self.scene().selectedItems()
@@ -364,8 +395,13 @@ class ExtendedScene(QGraphicsView):
         self.resetTransform()
 
     def copy_selected_components(self) -> None:
-        self._copied_components = [item.copy() for item in self.scene().selectedItems()
-                                   if isinstance(item, BaseComponent)]
+        mime = QMimeData()
+        copied_components = [item.convert_to_json() for item in self.scene().selectedItems()
+                             if isinstance(item, BaseComponent)]
+        encoded_data = json.dumps(copied_components).encode("utf-8")
+        mime.setData(ExtendedScene.MIME_TYPE, encoded_data)
+        clipboard = qApp.instance().clipboard()
+        clipboard.setMimeData(mime)
 
     def cut_selected_components(self) -> None:
         self.copy_selected_components()
@@ -445,28 +481,14 @@ class ExtendedScene(QGraphicsView):
 
         super().mouseReleaseEvent(event)
 
-    def paste_copied_components(self, copied_components: Optional[List[Tuple[BaseComponent, QPointF]]] = None) -> None:
-        """
-        :param copied_components: list of copied components with their positions to be pasted.
-        """
-
-        copied_components = copied_components or self._copied_components
-        if self._operation is not ExtendedScene.Operation.NO_ACTION or not copied_components:
+    def paste_copied_components(self) -> None:
+        clipboard = qApp.instance().clipboard()
+        mime_data = clipboard.mimeData()
+        if not mime_data.hasFormat(ExtendedScene.MIME_TYPE):
             return
 
-        self.remove_all_selections()
-        left_top = ut.get_left_top_pos([pos for _, pos in copied_components])
-
-        for item, item_pos in copied_components:
-            item_to_paste = item.copy()[0]
-            item_to_paste.set_position_after_paste(self._mouse_pos, item_pos, left_top)
-            self.add_component(item_to_paste)
-            item_to_paste.setFlag(QGraphicsItem.ItemIsMovable, True)
-            item_to_paste.setFlag(QGraphicsItem.ItemIsSelectable, True)
-            item_to_paste.setSelected(True)
-            slot_to_deselect = partial(self._handle_deselecting_pasted_component, item_to_paste)
-            item_to_paste.selection_signal.connect(slot_to_deselect)
-            self._pasted_components[item_to_paste] = slot_to_deselect
+        copied_components = json.loads(mime_data.data(ExtendedScene.MIME_TYPE).data())
+        self._paste_copied_components(copied_components)
 
     def remove_all_selections(self, components: Optional[List[QGraphicsItem]] = None) -> None:
         """

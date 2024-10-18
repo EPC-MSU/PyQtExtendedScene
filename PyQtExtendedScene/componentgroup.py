@@ -1,4 +1,4 @@
-from typing import Generator, Optional, Tuple
+from typing import Any, Dict, Generator, Optional, Tuple
 from PyQt5.QtCore import QPointF, Qt, QTimer
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent
 from . import utils as ut
@@ -28,19 +28,40 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         self._scale_changed = get_signal_sender(float)()
         self._scene_mode_changed = get_signal_sender(SceneMode)()
 
-    def addToGroup(self, item: QGraphicsItem) -> None:
+    @classmethod
+    def create_from_json(cls, data: Dict[str, Any]) -> Optional["ComponentGroup"]:
         """
-        :param item: item to be added to the group.
+        :param data: a dictionary with basic attributes that can be used to create an object.
+        :return: class instance.
         """
 
-        if isinstance(item, BaseComponent):
-            self._scale_changed.connect(item.update_scale)
-            self._scene_mode_changed.connect(item.set_scene_mode)
+        group = ComponentGroup(data["draggable"], data["selectable"], data["unique_selection"])
+        for component_data in data["components"]:
+            component_class = ut.get_class_by_name(component_data["class"])
+            if not component_class or not hasattr(component_class, "create_from_json"):
+                continue
 
-        if self._animation_timer and isinstance(item, RectComponent):
-            self._animation_timer.timeout.connect(item.update_selection)
+            component = component_class.create_from_json(component_data)
+            if not component:
+                continue
 
-        super().addToGroup(item)
+            component.setPos(QPointF(*component_data["pos"]))
+            group.addToGroup(component)
+        return group
+
+    def addToGroup(self, component: QGraphicsItem) -> None:
+        """
+        :param component: component to be added to the group.
+        """
+
+        if isinstance(component, BaseComponent):
+            self._scale_changed.connect(component.update_scale)
+            self._scene_mode_changed.connect(component.set_scene_mode)
+
+        if self._animation_timer and isinstance(component, RectComponent):
+            self._animation_timer.timeout.connect(component.update_selection)
+
+        super().addToGroup(component)
 
     def copy(self) -> Tuple["ComponentGroup", QPointF]:
         """
@@ -49,13 +70,31 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
 
         component = ComponentGroup(self._draggable, self._selectable, self._unique_selection)
         points = []
-        for item in self.childItems():
-            if hasattr(item, "copy"):
-                copied_item, pos = item.copy()
-                copied_item.setPos(pos)
-                component.addToGroup(copied_item)
+        for component in self.childItems():
+            if hasattr(component, "copy"):
+                copied_component, pos = component.copy()
+                copied_component.setPos(pos)
+                component.addToGroup(copied_component)
                 points.append(pos)
         return component, ut.get_left_top_pos(points)
+
+    def convert_to_json(self) -> Dict[str, Any]:
+        """
+        :return: dictionary with basic object attributes.
+        """
+
+        components_data = []
+        points = []
+        for component in self.childItems():
+            if isinstance(component, BaseComponent):
+                component_data = component.convert_to_json()
+                components_data.append(component_data)
+                points.append(QPointF(*component_data["pos"]))
+
+        pos = ut.get_left_top_pos(points)
+        return {**super().convert_to_json(),
+                "components": components_data,
+                "pos": (pos.x(), pos.y())}
 
     def handle_selection(self, selected: bool = True) -> None:
         """
@@ -97,6 +136,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
             if isinstance(item, RectComponent):
                 if self._animation_timer:
                     self._animation_timer.disconnect(item.update_selection)
+
                 if timer is not None:
                     timer.timeout.connect(item.update_selection)
 

@@ -1,5 +1,19 @@
-from typing import List
+import sys
+from typing import List, Optional
 from PyQt5.QtCore import QPointF
+
+
+def get_class_by_name(class_name: str) -> Optional[type]:
+    """
+    :param class_name: class name.
+    :return: class with the given name.
+    """
+
+    for module in sys.modules.values():
+        if hasattr(module, class_name):
+            return getattr(module, class_name)
+
+    return None
 
 
 def get_left_top_pos(points: List[QPointF]) -> QPointF:
