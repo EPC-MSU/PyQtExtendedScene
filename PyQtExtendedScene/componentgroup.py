@@ -29,7 +29,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         self._scene_mode_changed = get_signal_sender(SceneMode)()
 
     @classmethod
-    def create_from_json(cls, data: Dict[str, Any]) -> Optional["ComponentGroup"]:
+    def create_from_json(cls, data: Dict[str, Any]) -> "ComponentGroup":
         """
         :param data: a dictionary with basic attributes that can be used to create an object.
         :return: class instance.

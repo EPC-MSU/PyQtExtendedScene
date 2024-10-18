@@ -39,7 +39,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         self._set_rect(self._r)
 
     @classmethod
-    def create_from_json(cls, data: Dict[str, Any]) -> Optional["PointComponent"]:
+    def create_from_json(cls, data: Dict[str, Any]) -> "PointComponent":
         """
         :param data: a dictionary with basic attributes that can be used to create an object.
         :return: class instance.

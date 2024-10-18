@@ -111,7 +111,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
             self.setRect(rect)
 
     @classmethod
-    def create_from_json(cls, data: Dict[str, Any]) -> Optional["RectComponent"]:
+    def create_from_json(cls, data: Dict[str, Any]) -> "RectComponent":
         """
         :param data: a dictionary with basic attributes that can be used to create an object.
         :return: class instance.
