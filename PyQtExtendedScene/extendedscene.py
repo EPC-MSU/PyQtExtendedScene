@@ -25,6 +25,7 @@ class ExtendedScene(QGraphicsView):
     edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
     middle_clicked: pyqtSignal = pyqtSignal(QPointF)
+    mouse_moved: pyqtSignal = pyqtSignal(QPointF)
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -444,6 +445,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         self._mouse_pos = self.mapToScene(event.pos())
+        self.mouse_moved.emit(self._mouse_pos)
         if self._operation is ExtendedScene.Operation.CREATE_COMPONENT:
             self._handle_component_creation_by_mouse()
             return
