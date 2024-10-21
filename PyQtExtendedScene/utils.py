@@ -1,6 +1,8 @@
 import sys
+import time
 from typing import List, Optional
-from PyQt5.QtCore import QPointF
+from PyQt5.QtCore import QPointF, Qt
+from PyQt5.QtGui import QPen
 
 
 def get_class_by_name(class_name: str) -> Optional[type]:
@@ -14,6 +16,21 @@ def get_class_by_name(class_name: str) -> Optional[type]:
             return getattr(module, class_name)
 
     return None
+
+
+def get_dashed_pen(solid_pen: QPen) -> QPen:
+    """
+    :param solid_pen: solid pen.
+    :return: dashed pen.
+    """
+
+    pen = QPen(solid_pen)
+    pen.setStyle(Qt.CustomDashLine)
+    pattern = 0, 3, 0, 3, 3, 0, 3, 0
+    update_interval = 0.4
+    mod = int(time.monotonic() / update_interval) % (len(pattern) // 2)
+    pen.setDashPattern(pattern[mod * 2:] + pattern[:mod * 2])
+    return pen
 
 
 def get_left_top_pos(points: List[QPointF]) -> QPointF:

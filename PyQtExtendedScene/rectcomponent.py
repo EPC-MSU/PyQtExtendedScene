@@ -1,10 +1,10 @@
-import time
 from enum import auto, Enum
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
                              QStyleOptionGraphicsItem, QWidget)
+from . import utils as ut
 from .basecomponent import BaseComponent
 from .pointcomponent import PointComponent
 from .scenemode import SceneMode
@@ -386,21 +386,6 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
 
     def update_selection(self) -> None:
         if self.is_selected():
-            super().setPen(get_dashed_pen(self._solid_pen))
+            super().setPen(ut.get_dashed_pen(self._solid_pen))
         elif self.pen() != self._solid_pen:
             super().setPen(QPen(self._solid_pen))
-
-
-def get_dashed_pen(solid_pen: QPen) -> QPen:
-    """
-    :param solid_pen: solid pen.
-    :return: dashed pen.
-    """
-
-    pen = QPen(solid_pen)
-    pen.setStyle(Qt.CustomDashLine)
-    pattern = 0, 3, 0, 3, 3, 0, 3, 0
-    update_interval = 0.4
-    mod = int(time.monotonic() / update_interval) % (len(pattern) // 2)
-    pen.setDashPattern(pattern[mod * 2:] + pattern[:mod * 2])
-    return pen
