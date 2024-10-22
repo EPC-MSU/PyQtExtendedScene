@@ -55,6 +55,8 @@ class Dialog(QDialog):
         group.addToGroup(point_component_for_group)
         group.addToGroup(rect_component_for_group)
         widget.add_component(group)
+
+        widget.fit_in_view()
         return widget
 
     def _init_ui(self) -> None:

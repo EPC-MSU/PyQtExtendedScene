@@ -108,16 +108,20 @@ class ExtendedScene(QGraphicsView):
         self._components_in_operation.clear()
 
     def _create_shortcuts(self) -> None:
-        combination_and_slots = {Qt.CTRL + Qt.Key_C: self.copy_selected_components,
-                                 Qt.CTRL + Qt.Key_X: self.cut_selected_components,
-                                 Qt.Key_Delete: self.delete_selected_components,
-                                 Qt.CTRL + Qt.Key_V: self.paste_copied_components}
-        self._shortcuts: List[QShortcut] = []
-        for combination, slot in combination_and_slots.items():
+        self._combination_and_slots = {Qt.CTRL + Qt.Key_C: self.copy_selected_components,
+                                       Qt.CTRL + Qt.Key_X: self.cut_selected_components,
+                                       Qt.Key_Delete: self.delete_selected_components,
+                                       Qt.CTRL + Qt.Key_V: self.paste_copied_components}
+        self._shortcuts: Dict[int, QShortcut] = dict()
+        for combination, slot in self._combination_and_slots.items():
             shortcut = QShortcut(QKeySequence(combination), self)
             shortcut.setContext(Qt.WindowShortcut)
             shortcut.activated.connect(slot)
-            self._shortcuts.append(shortcut)
+            self._shortcuts[combination] = shortcut
+
+    def _enable_shortcuts(self) -> None:
+        for combination, shortcut in self._shortcuts.items():
+            shortcut.activated.connect(self._combination_and_slots[combination])
 
     def _finish_create_point_component_by_mouse(self) -> None:
         self._current_component.setSelected(False)
@@ -147,6 +151,16 @@ class ExtendedScene(QGraphicsView):
                 return item.group() if item.group() else item
 
         return None
+
+    def _get_zoom_factor(self, event: QWheelEvent) -> float:
+        """
+        :param event: wheel event.
+        :return: zoom factor.
+        """
+
+        zoom_factor = 1.0
+        zoom_factor += event.angleDelta().y() * self._zoom_speed
+        return zoom_factor
 
     def _handle_component_creation_by_mouse(self) -> None:
         if isinstance(self._current_component, PointComponent):
@@ -374,14 +388,6 @@ class ExtendedScene(QGraphicsView):
         elif isinstance(component, ComponentGroup):
             component.set_animation_timer(self._animation_timer)
 
-    def all_components(self, class_filter: type = object) -> List[QGraphicsItem]:
-        """
-        :param class_filter: filter for components on scene.
-        :return: list of components that match a given filter.
-        """
-
-        return list(filter(lambda x: isinstance(x, class_filter), self._components))
-
     def allow_drag(self, allow: bool = True) -> None:
         """
         :param allow: if True, then components are allowed to be moved around the scene.
@@ -415,6 +421,20 @@ class ExtendedScene(QGraphicsView):
                 self._components_in_operation.remove(item)
             except ValueError:
                 pass
+
+    def disable_shortcuts(self) -> None:
+        for combination, shortcut in self._shortcuts.items():
+            try:
+                shortcut.activated.disconnect(self._combination_and_slots[combination])
+            except TypeError:
+                ...
+
+    def enable_shortcuts(self) -> None:
+        self.disable_shortcuts()
+        self._enable_shortcuts()
+
+    def fit_in_view(self) -> None:
+        self.fitInView(self.sceneRect(), Qt.KeepAspectRatioByExpanding)
 
     def is_drag_allowed(self) -> bool:
         """
@@ -560,8 +580,7 @@ class ExtendedScene(QGraphicsView):
         :param event: wheel event.
         """
 
-        zoom_factor = 1.0
-        zoom_factor += event.angleDelta().y() * self._zoom_speed
+        zoom_factor = self._get_zoom_factor(event)
         if self._scale * zoom_factor < ExtendedScene.MIN_SCALE and zoom_factor < 1.0:  # minimum allowed zoom
             return
 

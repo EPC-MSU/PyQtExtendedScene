@@ -73,6 +73,7 @@ if __name__ == "__main__":
     widget.on_component_left_click.connect(handle_left_click)
     widget.on_component_moved.connect(handle_component_move)
     widget.on_component_right_click.connect(handle_right_click)
+    widget.fit_in_view()
     widget.show()
 
     sys.exit(app.exec_())
