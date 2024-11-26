@@ -75,10 +75,15 @@ class ExtendedScene(QGraphicsView):
         self._set_view_params()
         self._create_shortcuts()
 
-    def _add_items_to_edited_group(self) -> None:
+    def _add_components_in_operation_to_group(self) -> Optional[ComponentGroup]:
+        """
+        :return: a group of components into which all editable components are combined.
+        """
+
         if not self._components_in_operation:
             if self._group:
                 self.scene().removeItem(self._group)
+            group = None
         else:
             group = self._group or ComponentGroup()
 
@@ -92,10 +97,10 @@ class ExtendedScene(QGraphicsView):
                 self.add_component(group)
             else:
                 self._group.show()
-            self.edited_group_component_signal.emit(group)
 
         self._group = None
         self._components_in_operation.clear()
+        return group
 
     def _create_shortcuts(self) -> None:
         self._combination_and_slots = {Qt.CTRL + Qt.Key_C: self.copy_selected_components,
@@ -571,7 +576,9 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._scene_mode is SceneMode.EDIT_GROUP:
-            self._add_items_to_edited_group()
+            group = self._add_components_in_operation_to_group()
+            if group:
+                self.edited_group_component_signal.emit(group)
 
         self._scene_mode = mode
         self.scene_mode_changed.emit(mode)
