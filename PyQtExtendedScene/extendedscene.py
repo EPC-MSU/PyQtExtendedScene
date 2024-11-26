@@ -2,8 +2,8 @@ import json
 from enum import auto, Enum
 from functools import partial
 from typing import Any, Dict, List, Optional
-from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRectF, QSize, Qt,
-                          QTimer)
+from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRectF, QSize,
+                          QSizeF, Qt, QTimer)
 from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
@@ -69,20 +69,10 @@ class ExtendedScene(QGraphicsView):
         self.setScene(QGraphicsScene())
         self._background: Optional[QGraphicsPixmapItem] = self.scene().addPixmap(background) if background else None
 
-        self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QBrush(QColor(0, 0, 0)))
-        self.setFrameShape(QFrame.NoFrame)
-        self.setMouseTracking(True)
-        # For keyboard events
-        self.setFocusPolicy(Qt.StrongFocus)
-
         self._animation_timer: QTimer = QTimer()
         self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
 
+        self._set_view_params()
         self._create_shortcuts()
 
     def _add_items_to_edited_group(self) -> None:
@@ -342,6 +332,17 @@ class ExtendedScene(QGraphicsView):
         self.setDragMode(QGraphicsView.RubberBandDrag)
         self._operation = ExtendedScene.Operation.SELECT_COMPONENT
 
+    def _set_view_params(self) -> None:
+        self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setBackgroundBrush(QBrush(QColor(0, 0, 0)))
+        self.setFrameShape(QFrame.NoFrame)
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.StrongFocus)
+
     def _start_create_point_component_by_mouse(self, pos: QPointF) -> None:
         """
         :param pos: mouse position.
@@ -435,6 +436,13 @@ class ExtendedScene(QGraphicsView):
 
     def fit_in_view(self) -> None:
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatioByExpanding)
+
+    def get_background_size(self) -> QSizeF:
+        """
+        :return: background image size.
+        """
+
+        return self._background.boundingRect().size() if self._background else QSizeF()
 
     def is_drag_allowed(self) -> bool:
         """
