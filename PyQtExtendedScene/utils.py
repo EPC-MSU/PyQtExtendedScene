@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 from PyQt5.QtCore import QPointF, Qt
 from PyQt5.QtGui import QPen
 
@@ -47,3 +47,17 @@ def get_left_top_pos(points: List[QPointF]) -> QPointF:
         if top is None or top > y:
             top = y
     return QPointF(left, top)
+
+
+def send_edited_components_changed_signal(func):
+    """
+    A decorator that sends a signal that the edited components have changed.
+    :param func: decorated function.
+    """
+
+    def wrapper(self, *args, **kwargs) -> Any:
+        result = func(self, *args, **kwargs)
+        self.edited_components_changed.emit()
+        return result
+
+    return wrapper

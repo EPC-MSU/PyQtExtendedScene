@@ -22,6 +22,7 @@ class ExtendedScene(QGraphicsView):
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
+    edited_components_changed: pyqtSignal = pyqtSignal()
     edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
     middle_clicked: pyqtSignal = pyqtSignal(QPointF)
@@ -167,6 +168,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component.resize_by_mouse(self._mouse_pos)
 
     @pyqtSlot(BaseComponent, bool)
+    @ut.send_edited_components_changed_signal
     def _handle_deselecting_pasted_component(self, component: BaseComponent, selected: bool) -> None:
         """
         :param component: a component that was pasted after copying and then became unselected;
@@ -254,6 +256,7 @@ class ExtendedScene(QGraphicsView):
             else:
                 self._start_create_rect_component_by_mouse(pos)
 
+    @ut.send_edited_components_changed_signal
     def _handle_mouse_right_button_release(self) -> None:
         if self._scene_mode is SceneMode.NORMAL:
             self._set_no_action_mode()
@@ -310,6 +313,9 @@ class ExtendedScene(QGraphicsView):
                 child_item.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
             self._edited_group.hide()
+
+    def _send_edited_components_changed_signal(self) -> None:
+        self.edited_components_changed.emit()
 
     def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
@@ -420,6 +426,7 @@ class ExtendedScene(QGraphicsView):
         self.copy_selected_components()
         self.delete_selected_components()
 
+    @ut.send_edited_components_changed_signal
     def delete_selected_components(self) -> None:
         for item in self.scene().selectedItems():
             self.remove_component(item)
@@ -570,6 +577,7 @@ class ExtendedScene(QGraphicsView):
 
         self._background = self.scene().addPixmap(background)
 
+    @ut.send_edited_components_changed_signal
     def set_scene_mode(self, mode: SceneMode) -> None:
         """
         :param mode: new scene mode.
