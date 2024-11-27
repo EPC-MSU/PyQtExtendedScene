@@ -54,10 +54,10 @@ class ExtendedScene(QGraphicsView):
 
         super().__init__(parent)
         self._components: List[QGraphicsItem] = []
-        self._components_in_operation: List[QGraphicsItem] = []
         self._current_component: Optional[QGraphicsItem] = None
         self._drag_allowed: bool = True
-        self._group: Optional[ComponentGroup] = None
+        self._edited_components: List[QGraphicsItem] = []
+        self._edited_group: Optional[ComponentGroup] = None
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: Dict[BaseComponent, Any] = dict()
@@ -75,31 +75,31 @@ class ExtendedScene(QGraphicsView):
         self._set_view_params()
         self._create_shortcuts()
 
-    def _add_components_in_operation_to_group(self) -> Optional[ComponentGroup]:
+    def _add_edited_components_to_group(self) -> Optional[ComponentGroup]:
         """
         :return: a group of components into which all editable components are combined.
         """
 
-        if not self._components_in_operation:
-            if self._group:
-                self.scene().removeItem(self._group)
+        if not self._edited_components:
+            if self._edited_group:
+                self.scene().removeItem(self._edited_group)
             group = None
         else:
-            group = self._group or ComponentGroup()
+            group = self._edited_group or ComponentGroup()
 
-            for item in self._components_in_operation:
+            for item in self._edited_components:
                 self.remove_component(item)
                 item.setFlag(QGraphicsItem.ItemIsMovable, item.draggable)
                 item.setFlag(QGraphicsItem.ItemIsSelectable, item.selectable)
                 group.addToGroup(item)
 
-            if not self._group:
+            if not self._edited_group:
                 self.add_component(group)
             else:
-                self._group.show()
+                self._edited_group.show()
 
-        self._group = None
-        self._components_in_operation.clear()
+        self._edited_group = None
+        self._edited_components.clear()
         return group
 
     def _create_shortcuts(self) -> None:
@@ -122,7 +122,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component.setSelected(False)
         self.scene().removeItem(self._current_component)
         self.add_component(self._current_component)
-        self._components_in_operation.append(self._current_component)
+        self._edited_components.append(self._current_component)
         self._current_component = None
         self._operation = ExtendedScene.Operation.NO_ACTION
 
@@ -131,7 +131,7 @@ class ExtendedScene(QGraphicsView):
         if self._current_component.check_big_enough():
             self._current_component.fix_mode(RectComponent.Mode.NO_ACTION)
             self.add_component(self._current_component)
-            self._components_in_operation.append(self._current_component)
+            self._edited_components.append(self._current_component)
         self._current_component = None
         self._operation = ExtendedScene.Operation.NO_ACTION
 
@@ -187,11 +187,11 @@ class ExtendedScene(QGraphicsView):
                     for item in component.childItems():
                         component.removeFromGroup(item)
                         self.add_component(item)
-                        self._components_in_operation.append(item)
+                        self._edited_components.append(item)
                 else:
-                    self._components_in_operation.append(component)
+                    self._edited_components.append(component)
             elif self._scene_mode is SceneMode.EDIT:
-                self._components_in_operation.append(component)
+                self._edited_components.append(component)
 
     def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
         """
@@ -204,7 +204,7 @@ class ExtendedScene(QGraphicsView):
         else:
             self.left_clicked.emit(pos)
 
-        if self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP) and item in self._components_in_operation:
+        if self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP) and item in self._edited_components:
             if item and self._set_resize_mode_for_rect_component(item):
                 return
 
@@ -293,23 +293,23 @@ class ExtendedScene(QGraphicsView):
             self._pasted_components[component] = slot_to_deselect
 
     def _remove_items_from_edited_group(self) -> None:
-        self._components_in_operation = []
+        self._edited_components = []
         items = self.scene().selectedItems()
-        self._group = items[0] if len(items) == 1 and isinstance(items[0], ComponentGroup) else None
+        self._edited_group = items[0] if len(items) == 1 and isinstance(items[0], ComponentGroup) else None
 
         for component in self._components:
-            if component is not self._group:
+            if component is not self._edited_group:
                 component.setFlag(QGraphicsItem.ItemIsMovable, False)
                 component.setFlag(QGraphicsItem.ItemIsSelectable, False)
 
-        if self._group:
-            for child_item in self._group.set_edit_group_mode():
+        if self._edited_group:
+            for child_item in self._edited_group.set_edit_group_mode():
                 self.add_component(child_item)
-                self._components_in_operation.append(child_item)
+                self._edited_components.append(child_item)
                 child_item.setFlag(QGraphicsItem.ItemIsMovable, True)
                 child_item.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
-            self._group.hide()
+            self._edited_group.hide()
 
     def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
@@ -424,7 +424,7 @@ class ExtendedScene(QGraphicsView):
         for item in self.scene().selectedItems():
             self.remove_component(item)
             try:
-                self._components_in_operation.remove(item)
+                self._edited_components.remove(item)
             except ValueError:
                 pass
 
@@ -576,7 +576,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._scene_mode is SceneMode.EDIT_GROUP:
-            group = self._add_components_in_operation_to_group()
+            group = self._add_edited_components_to_group()
             if group:
                 self.edited_group_component_signal.emit(group)
 
@@ -584,11 +584,11 @@ class ExtendedScene(QGraphicsView):
         self.scene_mode_changed.emit(mode)
 
         if mode is SceneMode.EDIT:
-            self._components_in_operation = self._components[:]
+            self._edited_components = self._components[:]
         elif mode is SceneMode.EDIT_GROUP:
             self._remove_items_from_edited_group()
         else:
-            self._components_in_operation = []
+            self._edited_components = []
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """
