@@ -22,6 +22,8 @@ class ExtendedScene(QGraphicsView):
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
+    component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
+    component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
     edited_components_changed: pyqtSignal = pyqtSignal()
     edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
@@ -189,11 +191,16 @@ class ExtendedScene(QGraphicsView):
                     for item in component.childItems():
                         component.removeFromGroup(item)
                         self.add_component(item)
+                        self.component_pasted.emit(item)
                         self._edited_components.append(item)
                 else:
                     self._edited_components.append(component)
+                    self.component_pasted.emit(component)
             elif self._scene_mode is SceneMode.EDIT:
                 self._edited_components.append(component)
+                self.component_pasted.emit(component)
+            else:
+                self.component_pasted.emit(component)
 
     def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
         """
@@ -430,6 +437,7 @@ class ExtendedScene(QGraphicsView):
     def delete_selected_components(self) -> None:
         for item in self.scene().selectedItems():
             self.remove_component(item)
+            self.component_deleted.emit(item)
             try:
                 self._edited_components.remove(item)
             except ValueError:
