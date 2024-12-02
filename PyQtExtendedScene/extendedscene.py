@@ -328,7 +328,6 @@ class ExtendedScene(QGraphicsView):
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
 
     def _set_no_action_mode(self) -> None:
-        self.setDragMode(QGraphicsView.NoDrag)
         self._operation = ExtendedScene.Operation.NO_ACTION
 
     def _set_resize_mode_for_rect_component(self, item: RectComponent) -> bool:
@@ -530,6 +529,7 @@ class ExtendedScene(QGraphicsView):
             self._handle_mouse_right_button_release()
 
         super().mouseReleaseEvent(event)
+        self.setDragMode(QGraphicsView.NoDrag)
 
     def paste_copied_components(self) -> None:
         clipboard = qApp.instance().clipboard()
