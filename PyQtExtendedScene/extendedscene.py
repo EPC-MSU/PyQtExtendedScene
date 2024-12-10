@@ -48,11 +48,14 @@ class ExtendedScene(QGraphicsView):
         RESIZE_COMPONENT = auto()
         SELECT_COMPONENT = auto()
 
-    def __init__(self, background: Optional[QPixmap] = None, zoom_speed: float = 0.001, parent=None) -> None:
+    def __init__(self, background: Optional[QPixmap] = None, zoom_speed: float = 0.001, parent=None,
+                 scene: Optional[QGraphicsScene] = None) -> None:
         """
         :param background: pixmap background for scene;
         :param zoom_speed: zoom speed;
-        :param parent: parent.
+        :param parent: parent;
+        :param scene: scene for widget. In this argument you need to pass a scene from another widget if you need to
+        display the scene on different widgets at once.
         """
 
         super().__init__(parent)
@@ -69,14 +72,25 @@ class ExtendedScene(QGraphicsView):
         self._shift_pressed: bool = False
         self._zoom_speed: float = zoom_speed
 
-        self.setScene(QGraphicsScene())
-        self._background: Optional[QGraphicsPixmapItem] = self.scene().addPixmap(background) if background else None
+        self.setScene(scene or QGraphicsScene())
+        self.set_background(background)
 
         self._animation_timer: QTimer = QTimer()
         self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
 
         self._set_view_params()
         self._create_shortcuts()
+
+    @property
+    def background(self) -> Optional[QGraphicsPixmapItem]:
+        """
+        :return: graphic scene background element.
+        """
+
+        if hasattr(self.scene(), "background"):
+            return getattr(self.scene(), "background")
+
+        return None
 
     def _add_edited_components_to_group(self) -> Optional[ComponentGroup]:
         """
@@ -324,6 +338,13 @@ class ExtendedScene(QGraphicsView):
     def _send_edited_components_changed_signal(self) -> None:
         self.edited_components_changed.emit()
 
+    def _set_background(self, background: Optional[QPixmap] = None) -> None:
+        """
+        :param background: pixmap background for scene.
+        """
+
+        self.scene().background = self.scene().addPixmap(background) if background else None
+
     def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
 
@@ -416,7 +437,7 @@ class ExtendedScene(QGraphicsView):
     def clear_scene(self) -> None:
         self.scene().clear()
         self._components = []
-        self._background = None
+        self._set_background()
         self.resetTransform()
 
     def copy_selected_components(self) -> None:
@@ -461,7 +482,7 @@ class ExtendedScene(QGraphicsView):
         :return: background image size.
         """
 
-        return self._background.boundingRect().size() if self._background else QSizeF()
+        return self.background.boundingRect().size() if self.background else QSizeF()
 
     def is_drag_allowed(self) -> bool:
         """
@@ -568,22 +589,23 @@ class ExtendedScene(QGraphicsView):
         :param size: window size.
         """
 
-        factor_x = size.width() / self._background.pixmap().width()
-        factor_y = size.height() / self._background.pixmap().height()
-        factor = max(min(factor_x, factor_y), ExtendedScene.MIN_SCALE)
-        self.resetTransform()
-        self._scale = factor
-        self.zoom(factor, QPoint(0, 0))
+        if self.background:
+            factor_x = size.width() / self.background.pixmap().width()
+            factor_y = size.height() / self.background.pixmap().height()
+            factor = max(min(factor_x, factor_y), ExtendedScene.MIN_SCALE)
+            self.resetTransform()
+            self._scale = factor
+            self.zoom(factor, QPoint(0, 0))
 
     def set_background(self, background: QPixmap) -> None:
         """
         :param background: new pixmap background for scene.
         """
 
-        if self._background:
+        if self.background:
             raise ValueError("Call 'clear_scene' first!")
 
-        self._background = self.scene().addPixmap(background)
+        self._set_background(background)
 
     @ut.send_edited_components_changed_signal
     def set_scene_mode(self, mode: SceneMode) -> None:
