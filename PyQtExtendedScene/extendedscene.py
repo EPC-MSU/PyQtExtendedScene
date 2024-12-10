@@ -523,7 +523,7 @@ class ExtendedScene(QGraphicsView):
         if event.key() == Qt.Key_Shift and self._scene_mode is not SceneMode.NORMAL:
             self._shift_pressed = False
 
-    def limit_size_to_background(self, limit: bool) -> None:
+    def limit_rubber_band_size_to_background(self, limit: bool) -> None:
         """
         :param limit: if True, then it is needed to limit the size of the rubber band within the background.
         """
