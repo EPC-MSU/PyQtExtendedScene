@@ -1,5 +1,6 @@
 from enum import auto, Enum
 from PyQt5.QtCore import QRectF
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsRectItem
 from . import utils as ut
 from .rectcomponent import RectComponent
@@ -10,6 +11,9 @@ class RubberBand(RectComponent):
     Class for displaying rubber band after the right mouse button is released.
     """
 
+    PEN_COLOR: QColor = QColor(0, 120, 255)
+    Z_VALUE: float = 2
+
     class DisplayMode(Enum):
         """
         Class with a list of rubber band display modes when selected with the mouse.
@@ -19,7 +23,7 @@ class RubberBand(RectComponent):
         SHOW = auto()  # leave the rubber band shown after the left mouse button is released
 
     def __init__(self) -> None:
-        super().__init__(draggable=False, selectable=False)
+        super().__init__(pen_color=RubberBand.PEN_COLOR, draggable=False, selectable=False)
         self._display_mode: RubberBand.DisplayMode = RubberBand.DisplayMode.HIDE
         self._should_limit_size_to_background: bool = False
         self.hide()
