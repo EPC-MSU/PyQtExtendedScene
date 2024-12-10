@@ -11,6 +11,7 @@ from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
 from .pointcomponent import PointComponent
 from .rectcomponent import RectComponent
+from .rubberband import RubberBand
 from .scenemode import SceneMode
 
 
@@ -78,6 +79,7 @@ class ExtendedScene(QGraphicsView):
         self._animation_timer: QTimer = QTimer()
         self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
 
+        self._add_rubber_band()
         self._set_view_params()
         self._create_shortcuts()
 
@@ -118,6 +120,11 @@ class ExtendedScene(QGraphicsView):
         self._edited_group = None
         self._edited_components.clear()
         return group
+
+    def _add_rubber_band(self) -> None:
+        self._rubber_band: RubberBand = RubberBand()
+        self._animation_timer.timeout.connect(self._rubber_band.update_selection)
+        self.scene().addItem(self._rubber_band)
 
     def _create_shortcuts(self) -> None:
         self._combination_and_slots = {Qt.CTRL + Qt.Key_C: self.copy_selected_components,
@@ -248,9 +255,6 @@ class ExtendedScene(QGraphicsView):
             self._current_component.setFlag(QGraphicsItem.ItemIsMovable, True)
             self._current_component = None
 
-        self.setDragMode(QGraphicsView.NoDrag)
-        self._operation = ExtendedScene.Operation.NO_ACTION
-
     def _handle_mouse_middle_button_press(self, pos: QPointF) -> None:
         """
         :param pos: mouse position.
@@ -279,8 +283,9 @@ class ExtendedScene(QGraphicsView):
 
     @ut.send_edited_components_changed_signal
     def _handle_mouse_right_button_release(self) -> None:
-        if self._scene_mode is SceneMode.NORMAL:
-            self._set_no_action_mode()
+        if self._scene_mode is SceneMode.NORMAL and self._operation is ExtendedScene.Operation.SELECT_COMPONENT:
+            rect = self.mapToScene(self.rubberBandRect()).boundingRect()
+            self._rubber_band.set_rect(rect)
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
                 self._finish_create_point_component_by_mouse()
@@ -484,6 +489,13 @@ class ExtendedScene(QGraphicsView):
 
         return self.background.boundingRect().size() if self.background else QSizeF()
 
+    def hide_rubber_band_after_mouse_release(self) -> None:
+        """
+        The method sets the rubber band display mode, which hides the rubber band after releasing the mouse button.
+        """
+
+        self._rubber_band.set_display_mode(RubberBand.DisplayMode.HIDE)
+
     def is_drag_allowed(self) -> bool:
         """
         :return: if True, then components are allowed to be moved around the scene.
@@ -550,7 +562,9 @@ class ExtendedScene(QGraphicsView):
             self._handle_mouse_right_button_release()
 
         super().mouseReleaseEvent(event)
+
         self.setDragMode(QGraphicsView.NoDrag)
+        self._set_no_action_mode()
 
     def paste_copied_components(self) -> None:
         clipboard = qApp.instance().clipboard()
@@ -627,6 +641,14 @@ class ExtendedScene(QGraphicsView):
             self._remove_items_from_edited_group()
         else:
             self._edited_components = []
+
+    def show_rubber_band_after_mouse_release(self) -> None:
+        """
+        The method sets the rubber band display mode, in which the rubber band remains visible after releasing the
+        mouse button.
+        """
+
+        self._rubber_band.set_display_mode(RubberBand.DisplayMode.SHOW)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """
