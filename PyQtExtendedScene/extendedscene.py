@@ -166,7 +166,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         for item in self.items(event.pos()):
-            if isinstance(item, BaseComponent):
+            if isinstance(item, BaseComponent) and not isinstance(item, RubberBand):
                 return item.group() if item.group() else item
 
         return None
@@ -229,6 +229,7 @@ class ExtendedScene(QGraphicsView):
         :param pos: mouse position.
         """
 
+        self._rubber_band.hide()
         if item:
             self.on_component_left_click.emit(item)
         else:
