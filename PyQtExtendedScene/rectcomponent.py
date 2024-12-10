@@ -106,7 +106,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self._y_fixed: Optional[float] = None
 
         self.setPen(pen_color, pen_width)
-        self.setZValue(RectComponent.Z_VALUE)
+        self.setZValue(self.Z_VALUE)
         if rect is not None:
             self.setRect(rect)
 
@@ -122,16 +122,15 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
         return component
 
-    @staticmethod
-    def _create_solid_pen(color: Optional[QColor] = None, width: Optional[float] = None) -> QPen:
+    def _create_solid_pen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> QPen:
         """
         :param color: pen color;
         :param width: pen width.
         :return: solid pen.
         """
 
-        color = color or RectComponent.PEN_COLOR
-        width = width or RectComponent.PEN_WIDTH
+        color = color or self.PEN_COLOR
+        width = width or self.PEN_WIDTH
         pen = QPen(QBrush(color), width)
         pen.setCosmetic(True)
         return pen
@@ -165,25 +164,25 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         x_pos = None
         if left <= x <= left + pen_width:
             x_pos = RectComponent.MousePosition.X_LEFT
-        elif left <= x <= left + RectComponent.DIAGONAL_PORTION * width:
+        elif left <= x <= left + self.DIAGONAL_PORTION * width:
             x_pos = RectComponent.MousePosition.X_NEAR_LEFT
-        elif left + RectComponent.DIAGONAL_PORTION * width < x < right - RectComponent.DIAGONAL_PORTION * width:
+        elif left + self.DIAGONAL_PORTION * width < x < right - self.DIAGONAL_PORTION * width:
             x_pos = RectComponent.MousePosition.X_MIDDLE
         elif right - pen_width <= x <= right:
             x_pos = RectComponent.MousePosition.X_RIGHT
-        elif right - RectComponent.DIAGONAL_PORTION * width <= x <= right:
+        elif right - self.DIAGONAL_PORTION * width <= x <= right:
             x_pos = RectComponent.MousePosition.X_NEAR_RIGHT
 
         y_pos = None
         if top <= y <= top + pen_width:
             y_pos = RectComponent.MousePosition.Y_TOP
-        elif top <= y <= top + RectComponent.DIAGONAL_PORTION * height:
+        elif top <= y <= top + self.DIAGONAL_PORTION * height:
             y_pos = RectComponent.MousePosition.Y_NEAR_TOP
-        elif top + RectComponent.DIAGONAL_PORTION * height < y < bottom - RectComponent.DIAGONAL_PORTION * height:
+        elif top + self.DIAGONAL_PORTION * height < y < bottom - self.DIAGONAL_PORTION * height:
             y_pos = RectComponent.MousePosition.Y_MIDDLE
         elif bottom - pen_width <= y <= bottom:
             y_pos = RectComponent.MousePosition.Y_BOTTOM
-        elif bottom - RectComponent.DIAGONAL_PORTION * height <= y <= bottom:
+        elif bottom - self.DIAGONAL_PORTION * height <= y <= bottom:
             y_pos = RectComponent.MousePosition.Y_NEAR_BOTTOM
 
         return {(RectComponent.MousePosition.X_LEFT, RectComponent.MousePosition.Y_NEAR_TOP):
@@ -261,7 +260,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         :return: if True, then the component is larger than the allowed minimum size.
         """
 
-        return self.rect().width() >= RectComponent.MIN_SIZE and self.rect().height() >= RectComponent.MIN_SIZE
+        return self.rect().width() >= self.MIN_SIZE and self.rect().height() >= self.MIN_SIZE
 
     def check_in_resize_mode(self) -> bool:
         """

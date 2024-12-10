@@ -23,7 +23,7 @@ class RubberBand(RectComponent):
         SHOW = auto()  # leave the rubber band shown after the left mouse button is released
 
     def __init__(self) -> None:
-        super().__init__(pen_color=RubberBand.PEN_COLOR, draggable=False, selectable=False)
+        super().__init__(draggable=False, selectable=False)
         self._display_mode: RubberBand.DisplayMode = RubberBand.DisplayMode.HIDE
         self._should_limit_size_to_background: bool = False
         self.hide()

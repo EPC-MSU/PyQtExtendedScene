@@ -31,11 +31,11 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         QGraphicsEllipseItem.__init__(self)
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
-        self._r: Optional[float] = radius or PointComponent.RADIUS
+        self._r: Optional[float] = radius or self.RADIUS
         self._scale_factor: float = scale or 1
 
         self.setPen(pen)
-        self.setZValue(PointComponent.Z_VALUE)
+        self.setZValue(self.Z_VALUE)
         self._set_rect(self._r)
 
     @classmethod
@@ -88,7 +88,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         unselected.
         """
 
-        self._set_rect(self._r * PointComponent.INCREASE_FACTOR if selected else self._r)
+        self._set_rect(self._r * self.INCREASE_FACTOR if selected else self._r)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """
@@ -108,7 +108,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :param pen: pen.
         """
 
-        pen = QPen(pen or QPen(QBrush(PointComponent.PEN_COLOR), PointComponent.PEN_WIDTH))
+        pen = QPen(pen or QPen(QBrush(self.PEN_COLOR), self.PEN_WIDTH))
         pen.setCosmetic(True)
         super().setPen(pen)
 
@@ -118,5 +118,4 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         self._scale_factor = scale_factor
-        self._set_rect(self._r * PointComponent.INCREASE_FACTOR if self._r is not None and self.is_selected()
-                       else self._r)
+        self._set_rect(self._r * self.INCREASE_FACTOR if self._r is not None and self.is_selected() else self._r)
