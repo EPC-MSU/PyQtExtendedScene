@@ -21,7 +21,34 @@ class RubberBand(RectComponent):
     def __init__(self) -> None:
         super().__init__(draggable=False, selectable=False)
         self._display_mode: RubberBand.DisplayMode = RubberBand.DisplayMode.HIDE
+        self._should_limit_size_to_background: bool = False
         self.hide()
+
+    def _limit_size_to_background(self) -> None:
+        if not hasattr(self.scene(), "background"):
+            return
+
+        rect = self.mapRectToScene(self.rect())
+        background_rect = self.scene().background.sceneBoundingRect()
+        if not rect or not background_rect:
+            return
+
+        if (background_rect.right() < rect.left() or rect.right() < background_rect.left() or
+                background_rect.bottom() < rect.top() or rect.bottom() < background_rect.top()):
+            self.setRect(QRectF())
+        else:
+            left = max(rect.left(), background_rect.left())
+            right = min(rect.right(), background_rect.right())
+            top = max(rect.top(), background_rect.top())
+            bottom = min(rect.bottom(), background_rect.bottom())
+            self.setRect(QRectF(left, top, right - left, bottom - top))
+
+    def limit_size_to_background(self, limit: bool) -> None:
+        """
+        :param limit: if True, then it is needed to limit the size of the rubber band within the background.
+        """
+
+        self._should_limit_size_to_background = limit
 
     def set_display_mode(self, mode: "RubberBand.DisplayMode") -> None:
         """
@@ -37,6 +64,8 @@ class RubberBand(RectComponent):
 
         if rect.height() and rect.width():
             self.setRect(rect)
+            if self._should_limit_size_to_background:
+                self._limit_size_to_background()
             self.setVisible(self._display_mode is RubberBand.DisplayMode.SHOW)
 
     def update_selection(self) -> None:

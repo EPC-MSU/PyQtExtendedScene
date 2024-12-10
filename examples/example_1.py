@@ -64,7 +64,6 @@ if __name__ == "__main__":
     image = image.scaled(800, 600)
     # Create workspace
     widget = ExtendedScene(image)
-    widget.show_rubber_band_after_mouse_release()
 
     # Let's add some components to our workspace
     widget.add_component(MyComponent(500, 400, "My component 1"))
@@ -72,7 +71,7 @@ if __name__ == "__main__":
 
     # Handle left click
     widget.on_component_left_click.connect(handle_left_click)
-    widget.on_component_moved.connect(handle_component_move)
+    widget.component_moved.connect(handle_component_move)
     widget.on_component_right_click.connect(handle_right_click)
     widget.fit_in_view()
     widget.show()

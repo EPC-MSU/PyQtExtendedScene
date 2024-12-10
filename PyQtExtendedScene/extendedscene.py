@@ -24,6 +24,7 @@ class ExtendedScene(QGraphicsView):
     MIN_SCALE: float = 0.1
     UPDATE_INTERVAL: int = 10  # msec
     component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
+    component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
     edited_components_changed: pyqtSignal = pyqtSignal()
     edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -32,7 +33,6 @@ class ExtendedScene(QGraphicsView):
     mouse_moved: pyqtSignal = pyqtSignal(QPointF)
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
-    on_component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     right_clicked: pyqtSignal = pyqtSignal(QPointF)
     scale_changed: pyqtSignal = pyqtSignal(float)
     scene_mode_changed: pyqtSignal = pyqtSignal(SceneMode)
@@ -251,7 +251,7 @@ class ExtendedScene(QGraphicsView):
     def _handle_mouse_left_button_release(self) -> None:
         if self._operation is ExtendedScene.Operation.DRAG_COMPONENT:
             for item in self.scene().selectedItems():
-                self.on_component_moved.emit(item)
+                self.component_moved.emit(item)
         elif self._operation is ExtendedScene.Operation.RESIZE_COMPONENT:
             self._current_component.setFlag(QGraphicsItem.ItemIsMovable, True)
             self._current_component = None
@@ -285,8 +285,7 @@ class ExtendedScene(QGraphicsView):
     @ut.send_edited_components_changed_signal
     def _handle_mouse_right_button_release(self) -> None:
         if self._scene_mode is SceneMode.NORMAL and self._operation is ExtendedScene.Operation.SELECT_COMPONENT:
-            rect = self.mapToScene(self.rubberBandRect()).boundingRect()
-            self._rubber_band.set_rect(rect)
+            self._set_new_rect_for_rubber_band()
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
                 self._finish_create_point_component_by_mouse()
@@ -353,6 +352,10 @@ class ExtendedScene(QGraphicsView):
 
     def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
+
+    def _set_new_rect_for_rubber_band(self) -> None:
+        rect = self.mapToScene(self.rubberBandRect()).boundingRect()
+        self._rubber_band.set_rect(rect)
 
     def _set_no_action_mode(self) -> None:
         self._operation = ExtendedScene.Operation.NO_ACTION
