@@ -61,9 +61,10 @@ class RubberBand(RectComponent):
 
         self._display_mode = mode
 
-    def set_rect(self, rect: QRectF) -> None:
+    def set_rect(self, rect: QRectF) -> bool:
         """
         :param rect: new rectangle for rubber band.
+        :return: True if the rubber band geometry has been changed, otherwise False.
         """
 
         if rect.height() and rect.width():
@@ -71,6 +72,9 @@ class RubberBand(RectComponent):
             if self._should_limit_size_to_background:
                 self._limit_size_to_background()
             self.setVisible(self._display_mode is RubberBand.DisplayMode.SHOW)
+            return True
+
+        return False
 
     def update_selection(self) -> None:
         QGraphicsRectItem.setPen(self, ut.get_dashed_pen(self._solid_pen))

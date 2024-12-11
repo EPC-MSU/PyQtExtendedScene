@@ -26,6 +26,7 @@ class ExtendedScene(QGraphicsView):
     component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
+    custom_context_menu_requested: pyqtSignal = pyqtSignal(QPoint)
     edited_components_changed: pyqtSignal = pyqtSignal()
     edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
@@ -283,9 +284,15 @@ class ExtendedScene(QGraphicsView):
                 self._start_create_rect_component_by_mouse(pos)
 
     @ut.send_edited_components_changed_signal
-    def _handle_mouse_right_button_release(self) -> None:
+    def _handle_mouse_right_button_release(self, pos: QPoint) -> None:
+        """
+        :param pos: mouse position.
+        """
+
         if self._scene_mode is SceneMode.NORMAL and self._operation is ExtendedScene.Operation.SELECT_COMPONENT:
-            self._set_new_rect_for_rubber_band()
+            rubber_band_changed = self._set_new_rect_for_rubber_band()
+            if not rubber_band_changed:
+                self._send_custom_context_menu_signal(pos)
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
                 self._finish_create_point_component_by_mouse()
@@ -340,6 +347,14 @@ class ExtendedScene(QGraphicsView):
 
             self._edited_group.hide()
 
+    def _send_custom_context_menu_signal(self, pos: QPoint) -> None:
+        """
+        :param pos: mouse position.
+        """
+
+        if self.contextMenuPolicy() == Qt.CustomContextMenu:
+            self.custom_context_menu_requested.emit(pos)
+
     def _send_edited_components_changed_signal(self) -> None:
         self.edited_components_changed.emit()
 
@@ -353,9 +368,13 @@ class ExtendedScene(QGraphicsView):
     def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
 
-    def _set_new_rect_for_rubber_band(self) -> None:
+    def _set_new_rect_for_rubber_band(self) -> bool:
+        """
+        :return: True if the rubber band geometry has been changed, otherwise False.
+        """
+
         rect = self.mapToScene(self.rubberBandRect()).boundingRect()
-        self._rubber_band.set_rect(rect)
+        return self._rubber_band.set_rect(rect)
 
     def _set_no_action_mode(self) -> None:
         self._operation = ExtendedScene.Operation.NO_ACTION
@@ -493,6 +512,17 @@ class ExtendedScene(QGraphicsView):
 
         return self.background.boundingRect().size() if self.background else QSizeF()
 
+    def get_visible_rubber_band_rect(self) -> Optional[QRectF]:
+        """
+        :return: boundaries of the visible selected area. If the rubber band is invisible, then None is returned.
+        """
+
+        rubber_band_rect = self._rubber_band.rect()
+        if self._rubber_band.isVisible() and rubber_band_rect.height() and rubber_band_rect.width():
+            return rubber_band_rect
+
+        return None
+
     def hide_rubber_band_after_mouse_release(self) -> None:
         """
         The method sets the rubber band display mode, which hides the rubber band after releasing the mouse button.
@@ -570,7 +600,7 @@ class ExtendedScene(QGraphicsView):
         if event.button() == Qt.LeftButton:
             self._handle_mouse_left_button_release()
         elif event.button() == Qt.RightButton:
-            self._handle_mouse_right_button_release()
+            self._handle_mouse_right_button_release(event.pos())
 
         super().mouseReleaseEvent(event)
 
