@@ -22,7 +22,7 @@ class ExtendedScene(QGraphicsView):
 
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
-    UPDATE_INTERVAL: int = 10  # msec
+    UPDATE_INTERVAL_MS: int = 10  # msec
     component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -78,7 +78,7 @@ class ExtendedScene(QGraphicsView):
         self.set_background(background)
 
         self._animation_timer: QTimer = QTimer()
-        self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL)
+        self._animation_timer.start(ExtendedScene.UPDATE_INTERVAL_MS)
 
         self._add_rubber_band()
         self._set_view_params()
@@ -224,9 +224,10 @@ class ExtendedScene(QGraphicsView):
             else:
                 self.component_pasted.emit(component)
 
-    def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], pos: QPointF) -> None:
+    def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], event: QMouseEvent, pos: QPointF) -> None:
         """
         :param item: component clicked by mouse;
+        :param event: mouse event;
         :param pos: mouse position.
         """
 
@@ -237,10 +238,11 @@ class ExtendedScene(QGraphicsView):
             self.left_clicked.emit(pos)
 
         if self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP) and item in self._edited_components:
-            if item and self._set_resize_mode_for_rect_component(item):
+            if self._set_resize_mode_for_rect_component(item):
                 return
 
         if item:
+            self._select_group_component_with_mouse_left_button_press(item, event)
             self._set_drag_component_mode()
             return
 
@@ -346,6 +348,20 @@ class ExtendedScene(QGraphicsView):
                 child_item.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
             self._edited_group.hide()
+
+    def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
+        """
+        :param item: component clicked by mouse;
+        :param event: mouse event.
+        """
+
+        if not isinstance(item, ComponentGroup) or int(event.modifiers()) & Qt.ControlModifier:
+            return
+
+        if not item.isSelected():
+            self.remove_all_selections()
+
+        item.setSelected(True)
 
     def _send_custom_context_menu_signal(self, pos: QPoint) -> None:
         """
@@ -584,7 +600,7 @@ class ExtendedScene(QGraphicsView):
         item = self._get_clicked_item(event)
         pos = self.mapToScene(event.pos())
         if event.button() == Qt.LeftButton:
-            self._handle_mouse_left_button_press(item, pos)
+            self._handle_mouse_left_button_press(item, event, pos)
         elif event.button() == Qt.MiddleButton:
             self._handle_mouse_middle_button_press(pos)
         elif event.button() == Qt.RightButton:
