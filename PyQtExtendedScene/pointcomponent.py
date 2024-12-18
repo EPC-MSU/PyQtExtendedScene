@@ -117,5 +117,5 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :param scale_factor: new scale factor.
         """
 
-        self._scale_factor = scale_factor
+        super().update_scale(scale_factor)
         self._set_rect(self._r * self.INCREASE_FACTOR if self._r is not None and self.is_selected() else self._r)

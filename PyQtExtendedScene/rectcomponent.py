@@ -68,6 +68,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         Y_NEAR_TOP = auto()
         Y_TOP = auto()
 
+    BORDER_REGION: float = 3
     CURSORS = {Mode.MOVE: Qt.SizeAllCursor,
                Mode.NO_ACTION: Qt.ArrowCursor,
                Mode.RESIZE_BOTTOM: Qt.SizeVerCursor,
@@ -153,34 +154,35 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         """
 
         x, y = pos.x(), pos.y()
-        pen_width = self.pen().width()
-        left = self.boundingRect().x()
-        width = self.boundingRect().width()
-        right = self.boundingRect().right()
-        top = self.boundingRect().y()
-        height = self.boundingRect().height()
-        bottom = self.boundingRect().bottom()
+        border_width = self.BORDER_REGION / self._scale_factor
+        rect = self.rect()
+        left = rect.x()
+        width = rect.width()
+        right = rect.right()
+        top = rect.y()
+        height = rect.height()
+        bottom = rect.bottom()
 
         x_pos = None
-        if left <= x <= left + pen_width:
+        if left - border_width <= x <= left:
             x_pos = RectComponent.MousePosition.X_LEFT
         elif left <= x <= left + self.DIAGONAL_PORTION * width:
             x_pos = RectComponent.MousePosition.X_NEAR_LEFT
         elif left + self.DIAGONAL_PORTION * width < x < right - self.DIAGONAL_PORTION * width:
             x_pos = RectComponent.MousePosition.X_MIDDLE
-        elif right - pen_width <= x <= right:
+        elif right <= x <= right + border_width:
             x_pos = RectComponent.MousePosition.X_RIGHT
         elif right - self.DIAGONAL_PORTION * width <= x <= right:
             x_pos = RectComponent.MousePosition.X_NEAR_RIGHT
 
         y_pos = None
-        if top <= y <= top + pen_width:
+        if top - border_width <= y <= top:
             y_pos = RectComponent.MousePosition.Y_TOP
         elif top <= y <= top + self.DIAGONAL_PORTION * height:
             y_pos = RectComponent.MousePosition.Y_NEAR_TOP
         elif top + self.DIAGONAL_PORTION * height < y < bottom - self.DIAGONAL_PORTION * height:
             y_pos = RectComponent.MousePosition.Y_MIDDLE
-        elif bottom - pen_width <= y <= bottom:
+        elif bottom <= y <= bottom + border_width:
             y_pos = RectComponent.MousePosition.Y_BOTTOM
         elif bottom - self.DIAGONAL_PORTION * height <= y <= bottom:
             y_pos = RectComponent.MousePosition.Y_NEAR_BOTTOM

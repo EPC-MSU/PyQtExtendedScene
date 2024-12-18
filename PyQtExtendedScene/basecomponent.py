@@ -28,6 +28,7 @@ class BaseComponent:
 
         super().__init__()
         self._draggable: bool = draggable
+        self._scale_factor: float = 1
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._selectable: bool = selectable
         self._selected_at_group: bool = False
@@ -158,4 +159,4 @@ class BaseComponent:
         :param scale_factor: new scale factor.
         """
 
-        ...
+        self._scale_factor = scale_factor
