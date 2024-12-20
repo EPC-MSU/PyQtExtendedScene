@@ -376,6 +376,25 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         elif self._mode in (RectComponent.Mode.RESIZE_LEFT, RectComponent.Mode.RESIZE_RIGHT):
             self._resize_at_left_and_right_mode(pos)
 
+    def resize_to_include_rect(self, rect: QRectF) -> None:
+        """
+        :param rect: rectangle that should be inside RectComponent.
+        """
+
+        current_rect_at_scene = self.mapRectToScene(self.rect())
+        for rect_vertex in (rect.topLeft(), rect.topRight(), rect.bottomRight(), rect.bottomLeft()):
+            if not current_rect_at_scene.contains(rect_vertex):
+                break
+        else:
+            return
+
+        left = min(rect.left(), current_rect_at_scene.left())
+        right = max(rect.right(), current_rect_at_scene.right())
+        top = min(rect.top(), current_rect_at_scene.top())
+        bottom = max(rect.bottom(), current_rect_at_scene.bottom())
+        self.setRect(QRectF(0, 0, right - left, bottom - top))
+        self.setPos(left, top)
+
     def setPen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> None:
         """
         :param color: pen color;
