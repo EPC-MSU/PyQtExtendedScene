@@ -1,8 +1,26 @@
 import sys
 import time
 from typing import Any, List, Optional
-from PyQt5.QtCore import QPointF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPen
+
+
+def fit_rect_to_background(background_rect: QRectF, rect: QRectF) -> Optional[QRectF]:
+    """
+    :param background_rect: background bounding rectangle;
+    :param rect: rectangle.
+    :return: a rectangle that lies inside the background.
+    """
+
+    if (background_rect.right() < rect.left() or rect.right() < background_rect.left() or
+            background_rect.bottom() < rect.top() or rect.bottom() < background_rect.top()):
+        return None
+
+    left = max(rect.left(), background_rect.left())
+    right = min(rect.right(), background_rect.right())
+    top = max(rect.top(), background_rect.top())
+    bottom = min(rect.bottom(), background_rect.bottom())
+    return QRectF(left, top, right - left, bottom - top)
 
 
 def get_class_by_name(class_name: str) -> Optional[type]:

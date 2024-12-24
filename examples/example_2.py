@@ -67,10 +67,10 @@ class Dialog(QDialog):
 
     @pyqtSlot()
     def _set_mode(self) -> None:
-        if self.sender() == self.button_edit:
-            mode = SceneMode.EDIT
-        else:
-            mode = SceneMode.NORMAL
+        if not self.sender().isChecked():
+            return
+
+        mode = SceneMode.EDIT if self.sender() == self.button_edit else SceneMode.NORMAL
         self.extended_scene.set_scene_mode(mode)
 
 

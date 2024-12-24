@@ -33,9 +33,8 @@ class BaseComponent:
         self._selectable: bool = selectable
         self._selected_at_group: bool = False
         self._unique_selection: bool = unique_selection
-        self.selection_signal = get_signal_sender(bool)()
-        self.selection_signal.connect(self.handle_selection)
 
+        self._create_selection_signal()
         self._set_flags()
 
     @classmethod
@@ -70,6 +69,11 @@ class BaseComponent:
         """
 
         return self._unique_selection
+
+    def _create_selection_signal(self) -> None:
+        self.selection_signal = get_signal_sender(bool)()
+        self.selection_signal.component = self
+        self.selection_signal.connect(self.handle_selection)
 
     def _set_flags(self) -> None:
         self.setAcceptHoverEvents(True)

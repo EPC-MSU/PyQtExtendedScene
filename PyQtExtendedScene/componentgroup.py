@@ -1,11 +1,17 @@
+import logging
 from typing import Any, Dict, Generator, Optional, Tuple
-from PyQt5.QtCore import QPointF, Qt, QTimer
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent
+from PyQt5.QtCore import QPointF, QRectF, Qt, QTimer
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsSceneHoverEvent,
+                             QGraphicsSceneMouseEvent)
 from . import utils as ut
 from .basecomponent import BaseComponent
+from .pointcomponent import PointComponent
 from .rectcomponent import RectComponent
 from .scenemode import SceneMode
 from .sender import get_signal_sender
+
+
+logger = logging.getLogger("pyqtextendedscene")
 
 
 class ComponentGroup(QGraphicsItemGroup, BaseComponent):
@@ -48,6 +54,16 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
             component.setPos(QPointF(*component_data["pos"]))
             group.addToGroup(component)
         return group
+
+    def _remove_child_from_group_and_scene(self, component: QGraphicsItem) -> None:
+        """
+        :param component: child component to be removed from the group and scene.
+        """
+
+        self.removeFromGroup(component)
+        if self.scene():
+            self.scene().removeItem(component)
+        logging.debug("%s removed from group %s", component, self)
 
     def addToGroup(self, component: QGraphicsItem) -> None:
         """
@@ -115,6 +131,30 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
             if isinstance(item, RectComponent):
                 item.hoverEnterEvent(event)
 
+    def limit_size_to_background(self, background: Optional[QGraphicsPixmapItem]) -> None:
+        """
+        :param background: background of scene.
+        """
+
+        if not background:
+            return
+
+        background_rect = background.sceneBoundingRect()
+        for child_item in self.childItems():
+            if isinstance(child_item, PointComponent) and not background.contains(self.mapToScene(child_item.pos())):
+                self._remove_child_from_group_and_scene(child_item)
+            elif isinstance(child_item, RectComponent):
+                rect = child_item.mapRectToScene(child_item.rect())
+                modified_rect = ut.fit_rect_to_background(background_rect, rect)
+                if modified_rect == rect:
+                    continue
+
+                self._remove_child_from_group_and_scene(child_item)
+                if modified_rect:
+                    child_item.setRect(QRectF(QPointF(0, 0), modified_rect.size()))
+                    child_item.setPos(modified_rect.topLeft())
+                    self.addToGroup(child_item)
+
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
         :param event: mouse event.
@@ -135,7 +175,10 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         for item in self.childItems():
             if isinstance(item, RectComponent):
                 if self._animation_timer:
-                    self._animation_timer.disconnect(item.update_selection)
+                    try:
+                        self._animation_timer.disconnect(item.update_selection)
+                    except TypeError:
+                        pass
 
                 if timer is not None:
                     timer.timeout.connect(item.update_selection)

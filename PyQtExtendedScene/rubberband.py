@@ -34,18 +34,11 @@ class RubberBand(RectComponent):
 
         rect = self.mapRectToScene(self.rect())
         background_rect = self.scene().background.sceneBoundingRect()
-        if not rect or not background_rect:
-            return
-
-        if (background_rect.right() < rect.left() or rect.right() < background_rect.left() or
-                background_rect.bottom() < rect.top() or rect.bottom() < background_rect.top()):
+        limit_rect = ut.fit_rect_to_background(background_rect, rect)
+        if limit_rect:
             self.setRect(QRectF())
         else:
-            left = max(rect.left(), background_rect.left())
-            right = min(rect.right(), background_rect.right())
-            top = max(rect.top(), background_rect.top())
-            bottom = min(rect.bottom(), background_rect.bottom())
-            self.setRect(QRectF(left, top, right - left, bottom - top))
+            self.setRect(limit_rect)
 
     def limit_size_to_background(self, limit: bool) -> None:
         """

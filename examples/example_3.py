@@ -6,10 +6,10 @@ from PyQt5.QtWidgets import QDialog, QApplication, QHBoxLayout, QRadioButton, QV
 
 
 try:
-    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent, SceneMode
+    from PyQtExtendedScene import ComponentGroup, DrawingMode, ExtendedScene, PointComponent, RectComponent, SceneMode
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent, SceneMode
+    from PyQtExtendedScene import ComponentGroup, DrawingMode, ExtendedScene, PointComponent, RectComponent, SceneMode
 
 
 class Dialog(QDialog):
@@ -29,6 +29,7 @@ class Dialog(QDialog):
             image = None
 
         widget = ExtendedScene(image)
+        widget.set_drawing_mode(DrawingMode.ONLY_IN_BACKGROUND)
         widget.setBackgroundBrush(QBrush(QColor("white")))
 
         point_component = PointComponent(4, draggable=False, selectable=True)
@@ -84,12 +85,16 @@ class Dialog(QDialog):
 
     @pyqtSlot()
     def _set_mode(self) -> None:
+        if not self.sender().isChecked():
+            return
+
         if self.sender() == self.button_edit:
             mode = SceneMode.EDIT
         elif self.sender() == self.button_edit_group:
             mode = SceneMode.EDIT_GROUP
         else:
             mode = SceneMode.NORMAL
+
         self.extended_scene.set_scene_mode(mode)
 
 
