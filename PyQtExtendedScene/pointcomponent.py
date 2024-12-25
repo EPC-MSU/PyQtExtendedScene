@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, Tuple
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QStyle, QStyleOptionGraphicsItem, QWidget
+from . import utils as ut
 from .basecomponent import BaseComponent
 
 
@@ -17,7 +18,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     Z_VALUE: float = 2
 
     def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, scale: Optional[float] = None,
-                 draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
+                 increase_factor: Optional[float] = None, draggable: bool = True, selectable: bool = True,
+                 unique_selection: bool = False) -> None:
         """
         :param radius: point radius;
         :param pen: pen;
@@ -31,10 +33,11 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         QGraphicsEllipseItem.__init__(self)
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
-        self._r: Optional[float] = radius or self.RADIUS
+        self._increase_factor: float = increase_factor or self.INCREASE_FACTOR
+        self._r: float = radius or self.RADIUS
         self._scale_factor: float = scale or 1
 
-        self.setPen(pen)
+        self.setPen(pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH))
         self.setZValue(self.Z_VALUE)
         self._set_rect(self._r)
 
@@ -102,15 +105,6 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         if option.state & QStyle.State_Selected:
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
-
-    def setPen(self, pen: Optional[QPen] = None) -> None:
-        """
-        :param pen: pen.
-        """
-
-        pen = QPen(pen or QPen(QBrush(self.PEN_COLOR), self.PEN_WIDTH))
-        pen.setCosmetic(True)
-        super().setPen(pen)
 
     def update_scale(self, scale_factor: float) -> None:
         """
