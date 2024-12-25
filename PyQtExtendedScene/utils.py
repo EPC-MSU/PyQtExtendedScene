@@ -2,7 +2,19 @@ import sys
 import time
 from typing import Any, Callable, List, Optional
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QPen
+from PyQt5.QtGui import QBrush, QColor, QPen
+
+
+def create_cosmetic_pen(color: QColor, width: float) -> QPen:
+    """
+    :param color: pen color;
+    :param width: pen width.
+    :return: default pen for component.
+    """
+
+    pen = QPen(QBrush(color), width)
+    pen.setCosmetic(True)
+    return pen
 
 
 def fit_rect_to_background(background_rect: QRectF, rect: QRectF) -> Optional[QRectF]:

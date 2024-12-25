@@ -103,7 +103,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
         self._mode: RectComponent.Mode = RectComponent.Mode.NO_ACTION
-        self._pen: QPen = pen or self._create_default_pen()
+        self._pen: QPen = pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH)
         self._update_pen_for_selection: Optional[Callable[[], QPen]] = (update_pen_for_selection or
                                                                         ut.get_function_to_update_dashed_pen(self._pen))
         self._x_fixed: Optional[float] = None
@@ -121,21 +121,11 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         :return: class instance.
         """
 
-        pen = QPen(QBrush(QColor(data["pen_color"])), data["pen_width"])
-        pen.setCosmetic(True)
+        pen = ut.create_cosmetic_pen(QColor(data["pen_color"]), data["pen_width"])
         component = RectComponent(QRectF(*data["rect"]), pen, None, data["draggable"],
                                   data["selectable"], data["unique_selection"])
         component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
         return component
-
-    def _create_default_pen(self) -> QPen:
-        """
-        :return: default pen for component.
-        """
-
-        pen = QPen(QBrush(self.PEN_COLOR), self.PEN_WIDTH)
-        pen.setCosmetic(True)
-        return pen
 
     def _determine_mode(self, pos: QPointF) -> Mode:
         """
