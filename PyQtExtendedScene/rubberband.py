@@ -70,4 +70,4 @@ class RubberBand(RectComponent):
         return False
 
     def update_selection(self) -> None:
-        QGraphicsRectItem.setPen(self, ut.get_dashed_pen(self._solid_pen))
+        QGraphicsRectItem.setPen(self, self._update_pen_for_selection())
