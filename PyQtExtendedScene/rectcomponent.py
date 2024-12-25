@@ -384,6 +384,14 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self.setRect(QRectF(0, 0, right - left, bottom - top))
         self.setPos(left, top)
 
+    def set_pen(self, pen: QPen) -> None:
+        """
+        :param pen: new pen.
+        """
+
+        self._pen = pen
+        self.setPen(pen)
+
     def update_selection(self) -> None:
         if self.is_selected():
             pen = self._pen if self._update_pen_for_selection is None else self._update_pen_for_selection()
