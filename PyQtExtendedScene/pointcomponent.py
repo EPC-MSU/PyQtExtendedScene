@@ -48,8 +48,9 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :return: class instance.
         """
 
-        pen = QPen(QBrush(QColor(data["pen_color"])), data["pen_width"])
-        component = PointComponent(data["radius"], pen, draggable=data["draggable"], selectable=data["selectable"],
+        pen = ut.create_cosmetic_pen(QColor(data["pen_color"]), data["pen_width"])
+        component = PointComponent(data["radius"], pen, increase_factor=data["increase_factor"],
+                                   draggable=data["draggable"], selectable=data["selectable"],
                                    unique_selection=data["unique_selection"])
         component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
         return component
@@ -71,6 +72,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         return {**super().convert_to_json(),
                 "brush_color": self.brush().color().rgba(),
                 "brush_style": self.brush().style(),
+                "increase_factor": self._increase_factor,
                 "pen_color": self.pen().color().rgba(),
                 "pen_width": self.pen().widthF(),
                 "radius": self._r}
@@ -80,8 +82,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :return: copied component and its current position.
         """
 
-        component = PointComponent(self._r, self.pen(), draggable=self._draggable, selectable=self._selectable,
-                                   unique_selection=self._unique_selection)
+        component = PointComponent(self._r, self.pen(), self._scale_factor, self._increase_factor, self._draggable,
+                                   self._selectable, self._unique_selection)
         component.setBrush(self.brush())
         return component, self.scenePos()
 
