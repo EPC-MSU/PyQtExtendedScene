@@ -4,7 +4,7 @@ from functools import partial
 from typing import Any, Dict, List, Optional
 from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRectF, QSize,
                           QSizeF, Qt, QTimer)
-from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPixmap, QWheelEvent
+from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPen, QPixmap, QWheelEvent
 from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
 from . import utils as ut
 from .basecomponent import BaseComponent
@@ -22,6 +22,10 @@ class ExtendedScene(QGraphicsView):
 
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
+    POINT_INCREASE_FACTOR: float = 2
+    POINT_PEN_COLOR: QColor = QColor("#0047AB")
+    POINT_PEN_WIDTH: float = 2
+    POINT_RADIUS: float = 4
     UPDATE_INTERVAL_MS: int = 10  # msec
     component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -69,6 +73,9 @@ class ExtendedScene(QGraphicsView):
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: Dict[BaseComponent, Any] = dict()
+        self._point_increase_factor: float = self.POINT_INCREASE_FACTOR
+        self._point_pen: QPen = ut.create_cosmetic_pen(self.POINT_PEN_COLOR, self.POINT_PEN_WIDTH)
+        self._point_radius: float = self.POINT_RADIUS
         self._scale: float = 1.0
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._shift_pressed: bool = False
@@ -433,7 +440,8 @@ class ExtendedScene(QGraphicsView):
         if self._current_component:
             self.scene().removeItem(self._current_component)
 
-        self._current_component = PointComponent(scale=self._scale)
+        self._current_component = PointComponent(self._point_radius, self._point_pen, self._scale,
+                                                 self._point_increase_factor)
         self._current_component.setPos(pos)
         self.scene().addItem(self._current_component)
         self._operation = ExtendedScene.Operation.CREATE_COMPONENT
@@ -677,6 +685,19 @@ class ExtendedScene(QGraphicsView):
             raise ValueError("Call 'clear_scene' first!")
 
         self._set_background(background)
+
+    def set_default_point_component_parameters(self, radius: Optional[float] = None,
+                                               increase_factor: Optional[float] = None, pen: Optional[QPen] = None
+                                               ) -> None:
+        """
+        :param radius: radius for the point components to be created;
+        :param increase_factor: increase factor for point components to be created;
+        :param pen: pen for point components to be created.
+        """
+
+        self._point_increase_factor = increase_factor or self.POINT_INCREASE_FACTOR
+        self._point_radius = radius or self.POINT_RADIUS
+        self._point_pen = pen or ut.create_cosmetic_pen(self.POINT_PEN_COLOR, self.POINT_PEN_WIDTH)
 
     @ut.send_edited_components_changed_signal
     def set_scene_mode(self, mode: SceneMode) -> None:
