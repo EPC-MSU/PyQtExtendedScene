@@ -106,7 +106,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self._x_fixed: Optional[float] = None
         self._y_fixed: Optional[float] = None
 
-        self.setPen(pen_color, pen_width)
+        self.set_pen(pen_color, pen_width)
         self.setZValue(self.Z_VALUE)
         if rect is not None:
             self.setRect(rect)
@@ -395,7 +395,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self.setRect(QRectF(0, 0, right - left, bottom - top))
         self.setPos(left, top)
 
-    def setPen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> None:
+    def set_pen(self, color: Optional[QColor] = None, width: Optional[float] = None) -> None:
         """
         :param color: pen color;
         :param width: pen width.
