@@ -121,8 +121,10 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         :return: class instance.
         """
 
-        component = RectComponent(QRectF(*data["rect"]), QColor(data["pen_color"]), data["pen_width"],
-                                  data["draggable"], data["selectable"], data["unique_selection"])
+        pen = QPen(QBrush(QColor(data["pen_color"])), data["pen_width"])
+        pen.setCosmetic(True)
+        component = RectComponent(QRectF(*data["rect"]), pen, None, data["draggable"],
+                                  data["selectable"], data["unique_selection"])
         component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
         return component
 
