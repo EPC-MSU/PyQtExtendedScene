@@ -24,8 +24,8 @@ class ExtendedScene(QGraphicsView):
     Widget for working with graphic objects.
     """
 
-    EDIT_PEN_COLOR: QColor = QColor(0, 52, 240)
-    EDIT_PEN_WIDTH: float = 3
+    PEN_COLOR_TO_EDIT: QColor = QColor("#007FFF")
+    PEN_WIDTH_TO_EDIT: float = 3
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
     POINT_INCREASE_FACTOR: float = 2
@@ -80,7 +80,7 @@ class ExtendedScene(QGraphicsView):
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: List[BaseComponent] = []
-        self._pen_to_edit: QPen = ut.create_cosmetic_pen(self.EDIT_PEN_COLOR, self.EDIT_PEN_WIDTH)
+        self._pen_to_edit: QPen = ut.create_cosmetic_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
         self._point_increase_factor: float = self.POINT_INCREASE_FACTOR
         self._point_pen: QPen = ut.create_cosmetic_pen(self.POINT_PEN_COLOR, self.POINT_PEN_WIDTH)
         self._point_radius: float = self.POINT_RADIUS
