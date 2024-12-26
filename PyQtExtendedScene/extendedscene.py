@@ -612,7 +612,7 @@ class ExtendedScene(QGraphicsView):
         copied_components = [item.convert_to_json() for item in self.scene().selectedItems()
                              if isinstance(item, BaseComponent)]
         encoded_data = json.dumps(copied_components).encode("utf-8")
-        mime.setData(ExtendedScene.MIME_TYPE, encoded_data)
+        mime.setData(self.MIME_TYPE, encoded_data)
         clipboard = qApp.instance().clipboard()
         clipboard.setMimeData(mime)
 
@@ -749,10 +749,10 @@ class ExtendedScene(QGraphicsView):
     def paste_copied_components(self) -> None:
         clipboard = qApp.instance().clipboard()
         mime_data = clipboard.mimeData()
-        if not mime_data.hasFormat(ExtendedScene.MIME_TYPE):
+        if not mime_data.hasFormat(self.MIME_TYPE):
             return
 
-        copied_components = json.loads(mime_data.data(ExtendedScene.MIME_TYPE).data())
+        copied_components = json.loads(mime_data.data(self.MIME_TYPE).data())
         self._paste_copied_components(copied_components)
 
     def remove_all_selections(self, components: Optional[List[QGraphicsItem]] = None) -> None:
