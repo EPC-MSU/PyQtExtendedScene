@@ -35,7 +35,7 @@ class RubberBand(RectComponent):
         rect = self.mapRectToScene(self.rect())
         background_rect = self.scene().background.sceneBoundingRect()
         limit_rect = ut.fit_rect_to_background(background_rect, rect)
-        if limit_rect:
+        if not limit_rect:
             self.setRect(QRectF())
         else:
             self.setRect(limit_rect)
