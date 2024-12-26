@@ -29,6 +29,7 @@ class BaseComponent:
         super().__init__()
         self._drag_allowed: bool = True
         self._draggable: bool = draggable
+        self._editable: bool = False
         self._scale_factor: float = 1
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._selectable: bool = selectable
@@ -140,6 +141,13 @@ class BaseComponent:
         for item_class in self.__class__.__bases__:
             if item_class != BaseComponent:
                 return item_class().itemChange(change, value)
+
+    def set_editable(self, editable: bool) -> None:
+        """
+        :param editable: if True, then the component can be edited.
+        """
+
+        self._editable = editable
 
     def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left_top: QPointF) -> None:
         """

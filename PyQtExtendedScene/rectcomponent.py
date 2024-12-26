@@ -104,6 +104,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
 
         self._mode: RectComponent.Mode = RectComponent.Mode.NO_ACTION
         self._pen: QPen = pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH)
+        self._pen_to_edit: QPen = QPen(self._pen)
         self._update_pen_for_selection: Optional[Callable[[], QPen]] = (update_pen_for_selection or
                                                                         ut.get_function_to_update_dashed_pen(self._pen))
         self._x_fixed: Optional[float] = None
@@ -384,6 +385,16 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self.setRect(QRectF(0, 0, right - left, bottom - top))
         self.setPos(left, top)
 
+    def set_editable(self, editable: bool, pen: Optional[QPen] = None) -> None:
+        """
+        :param editable: if True, then the component can be edited;
+        :param pen: pen to be used to draw the component when editing.
+        """
+
+        super().set_editable(editable)
+        self._pen_to_edit = pen or self._pen_to_edit
+        self.setPen(self._pen_to_edit if self._editable else self._pen)
+
     def set_pen(self, pen: QPen) -> None:
         """
         :param pen: new pen.
@@ -393,8 +404,15 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self.setPen(pen)
 
     def update_selection(self) -> None:
-        if self.is_selected():
-            pen = self._pen if self._update_pen_for_selection is None else self._update_pen_for_selection()
-            super().setPen(pen)
-        elif self.pen() != self._pen:
-            super().setPen(QPen(self._pen))
+        if not self._editable or self._scene_mode is SceneMode.NORMAL:
+            if self.is_selected():
+                pen = self._pen if self._update_pen_for_selection is None else self._update_pen_for_selection()
+                self.setPen(pen)
+            elif self.pen() != self._pen:
+                self.setPen(QPen(self._pen))
+        else:
+            if self.is_selected():
+                pen = ut.get_function_to_update_dashed_pen(self._pen_to_edit)()
+                self.setPen(pen)
+            elif self.pen() != self._pen_to_edit:
+                self.setPen(self._pen_to_edit)

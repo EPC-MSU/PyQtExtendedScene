@@ -34,10 +34,12 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         BaseComponent.__init__(self, draggable, selectable, unique_selection)
 
         self._increase_factor: float = increase_factor or self.INCREASE_FACTOR
+        self._pen: QPen = pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH)
+        self._pen_to_edit: QPen = QPen(self._pen)
         self._r: float = radius or self.RADIUS
         self._scale_factor: float = scale or 1
 
-        self.setPen(pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH))
+        self.setPen(self._pen)
         self.setZValue(self.Z_VALUE)
         self._set_rect(self._r)
 
@@ -73,8 +75,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
                 "brush_color": self.brush().color().rgba(),
                 "brush_style": self.brush().style(),
                 "increase_factor": self._increase_factor,
-                "pen_color": self.pen().color().rgba(),
-                "pen_width": self.pen().widthF(),
+                "pen_color": self._pen.color().rgba(),
+                "pen_width": self._pen.widthF(),
                 "radius": self._r}
 
     def copy(self) -> Tuple["PointComponent", QPointF]:
@@ -107,6 +109,16 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         if option.state & QStyle.State_Selected:
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
+
+    def set_editable(self, editable: bool, pen: Optional[QPen] = None) -> None:
+        """
+        :param editable: if True, then the component can be edited;
+        :param pen: pen to be used to draw the component when editing.
+        """
+
+        super().set_editable(editable)
+        self._pen_to_edit = pen or self._pen_to_edit
+        self.setPen(self._pen_to_edit if self._editable else self._pen)
 
     def update_scale(self, scale_factor: float) -> None:
         """

@@ -24,6 +24,8 @@ class ExtendedScene(QGraphicsView):
     Widget for working with graphic objects.
     """
 
+    EDIT_PEN_COLOR: QColor = QColor(0, 52, 240)
+    EDIT_PEN_WIDTH: float = 3
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_SCALE: float = 0.1
     POINT_INCREASE_FACTOR: float = 2
@@ -78,6 +80,7 @@ class ExtendedScene(QGraphicsView):
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: List[BaseComponent] = []
+        self._pen_to_edit: QPen = ut.create_cosmetic_pen(self.EDIT_PEN_COLOR, self.EDIT_PEN_WIDTH)
         self._point_increase_factor: float = self.POINT_INCREASE_FACTOR
         self._point_pen: QPen = ut.create_cosmetic_pen(self.POINT_PEN_COLOR, self.POINT_PEN_WIDTH)
         self._point_radius: float = self.POINT_RADIUS
@@ -256,6 +259,7 @@ class ExtendedScene(QGraphicsView):
         component = self.sender().component
         if component in self._pasted_components:
             self._handle_pasted_component_deselection(component)
+            self._set_editable_status_for_components()
 
     def _handle_pasted_component_deselection(self, component: BaseComponent) -> None:
         """
@@ -286,6 +290,7 @@ class ExtendedScene(QGraphicsView):
         for item in group.childItems():
             group.removeFromGroup(item)
             child_components.append(item)
+            self.add_component(item)
         return child_components
 
     def _handle_mouse_left_button_press(self, item: Optional[QGraphicsItem], event: QMouseEvent, pos: QPointF) -> None:
@@ -470,6 +475,11 @@ class ExtendedScene(QGraphicsView):
 
             self.remove_component(self._edited_group)
 
+    def _restore_editable_status_for_components(self) -> None:
+        for component in self._edited_components:
+            if isinstance(component, BaseComponent):
+                component.set_editable(False)
+
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
         """
         :param item: component clicked by mouse;
@@ -501,6 +511,11 @@ class ExtendedScene(QGraphicsView):
 
     def _set_drag_component_mode(self) -> None:
         self._operation = ExtendedScene.Operation.DRAG_COMPONENT
+
+    def _set_editable_status_for_components(self) -> None:
+        for component in self._edited_components:
+            if isinstance(component, (PointComponent, RectComponent)):
+                component.set_editable(True, self._pen_to_edit)
 
     def _set_new_rect_for_rubber_band(self) -> bool:
         """
@@ -564,6 +579,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component = PointComponent(self._point_radius, self._point_pen, self._scale,
                                                  self._point_increase_factor)
         self._current_component.setPos(pos)
+        self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)
         self._operation = ExtendedScene.Operation.CREATE_COMPONENT
 
@@ -578,6 +594,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component = RectComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
         self._current_component.setPos(pos)
         self._current_component.fix_mode(RectComponent.Mode.RESIZE_ANY)
+        self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)
         self._operation = ExtendedScene.Operation.CREATE_COMPONENT
 
@@ -828,6 +845,8 @@ class ExtendedScene(QGraphicsView):
         :param mode: new scene mode.
         """
 
+        self._restore_editable_status_for_components()
+
         if self._scene_mode is SceneMode.EDIT_GROUP:
             group = self._add_edited_components_to_group()
             if group:
@@ -838,10 +857,18 @@ class ExtendedScene(QGraphicsView):
 
         if mode is SceneMode.EDIT:
             self._edited_components = self._components[:]
+            for component in self._edited_components:
+                if isinstance(component, RectComponent):
+                    component.set_editable(True, self._pen_to_edit)
         elif mode is SceneMode.EDIT_GROUP:
             self._remove_items_from_edited_group()
+            for component in self._edited_components:
+                if isinstance(component, RectComponent):
+                    component.set_editable(True, self._pen_to_edit)
         else:
             self._edited_components = []
+
+        self._set_editable_status_for_components()
 
     def show_rubber_band_after_mouse_release(self) -> None:
         """
