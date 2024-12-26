@@ -45,12 +45,10 @@ class Dialog(QDialog):
         point_component_for_group = PointComponent(4)
         point_component_for_group.setBrush(QBrush(QColor("green")))
         point_component_for_group.setPos(400, 300)
-        # widget.add_component(point_component_for_group)
 
         rect_component_for_group = RectComponent(QRectF(0, 0, 200, 100))
         rect_component_for_group.setBrush(QBrush(QColor("green")))
         rect_component_for_group.setPos(400, 100)
-        # widget.add_component(rect_component_for_group)
 
         group = ComponentGroup()
         group.addToGroup(point_component_for_group)
