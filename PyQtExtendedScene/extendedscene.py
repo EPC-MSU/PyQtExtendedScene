@@ -112,16 +112,6 @@ class ExtendedScene(QGraphicsView):
 
         return None
 
-    def _add_component_to_scene(self, component: QGraphicsItem) -> None:
-        """
-        :param component: component to be added to the scene.
-        """
-
-        self._components.append(component)
-        self.scene().addItem(component)
-        self._connect_component_to_signals(component)
-        logger.debug("%s added to the scene", component)
-
     def _add_edited_components_to_group(self) -> Optional[ComponentGroup]:
         """
         :return: a group of components into which all editable components are combined.
@@ -138,7 +128,7 @@ class ExtendedScene(QGraphicsView):
                 item.setFlag(QGraphicsItem.ItemIsMovable, item.draggable)
                 item.setFlag(QGraphicsItem.ItemIsSelectable, item.selectable)
                 group.addToGroup(item)
-            group = self.add_component(group)
+            self.add_component(group)
 
         self._edited_group = None
         self._edited_components.clear()
@@ -149,6 +139,14 @@ class ExtendedScene(QGraphicsView):
         self._animation_timer.timeout.connect(self._rubber_band.update_selection)
         self.scene().addItem(self._rubber_band)
 
+    def _change_component_draggability_according_scene_flag(self, component: QGraphicsItem) -> None:
+        """
+        :param component: the component that needs to be made movable or non-movable.
+        """
+
+        draggable = component.draggable if self._drag_allowed else False
+        component.setFlag(QGraphicsItem.ItemIsMovable, draggable)
+
     def _connect_component_to_signals(self, component: QGraphicsItem) -> None:
         """
         :param component: component to be connected to scene signals.
@@ -156,6 +154,7 @@ class ExtendedScene(QGraphicsView):
 
         if isinstance(component, BaseComponent):
             self.scale_changed.connect(component.update_scale)
+            component.allow_drag(self._drag_allowed)
             component.set_scene_mode(self._scene_mode)
             self.scene_mode_changed.connect(component.set_scene_mode)
             component.selection_signal.connect(self._handle_component_selection_changed)
@@ -193,9 +192,10 @@ class ExtendedScene(QGraphicsView):
     def _finish_create_point_component_by_mouse(self) -> None:
         self._current_component.setSelected(False)
         self.scene().removeItem(self._current_component)
-        added_component = self.add_component(self._current_component)
-        if added_component:
-            self._edited_components.append(added_component)
+        modified_component = self._modify_component_to_add_to_scene(self._current_component)
+        if modified_component:
+            self.add_component(modified_component)
+            self._edited_components.append(modified_component)
 
         self._current_component = None
         self._operation = ExtendedScene.Operation.NO_ACTION
@@ -204,9 +204,10 @@ class ExtendedScene(QGraphicsView):
         self.scene().removeItem(self._current_component)
         if self._current_component.check_big_enough():
             self._current_component.fix_mode(RectComponent.Mode.NO_ACTION)
-            added_component = self.add_component(self._current_component)
-            if added_component:
-                self._edited_components.append(added_component)
+            modified_component = self._modify_component_to_add_to_scene(self._current_component)
+            if modified_component:
+                self.add_component(modified_component)
+                self._edited_components.append(modified_component)
 
         self._current_component = None
         self._operation = ExtendedScene.Operation.NO_ACTION
@@ -239,22 +240,6 @@ class ExtendedScene(QGraphicsView):
         elif isinstance(self._current_component, RectComponent):
             self._current_component.resize_by_mouse(self._mouse_pos)
 
-    def _handle_component_deselection(self, component: QGraphicsItem) -> Optional[QGraphicsItem]:
-        """
-        :param component: a component that has become unselected.
-        :return:
-        """
-
-        if component in self._components:
-            self.remove_component(component)
-        if component in self._edited_components:
-            self._edited_components.remove(component)
-
-        added_component = self.add_component(component)
-        if added_component and self._scene_mode is not SceneMode.NORMAL:
-            self._edited_components.append(added_component)
-        return added_component
-
     def _handle_component_resize_by_mouse(self) -> None:
         self._current_component.resize_by_mouse(self._mouse_pos)
 
@@ -270,21 +255,11 @@ class ExtendedScene(QGraphicsView):
 
         component = self.sender().component
         if component in self._pasted_components:
-            pasted = True
-            components = self._handle_pasted_component_deselection(component)
-        else:
-            pasted = False
-            components = [component]
+            self._handle_pasted_component_deselection(component)
 
-        for item in components:
-            deselected_item = self._handle_component_deselection(item)
-            if deselected_item and pasted:
-                self.component_pasted.emit(deselected_item)
-
-    def _handle_pasted_component_deselection(self, component: BaseComponent) -> List[BaseComponent]:
+    def _handle_pasted_component_deselection(self, component: BaseComponent) -> None:
         """
         :param component: a component that was pasted after copying and then became unselected.
-        :return: list of components that need to be pasted as a result.
         """
 
         self._pasted_components.remove(component)
@@ -294,7 +269,11 @@ class ExtendedScene(QGraphicsView):
             components = self._handle_pasted_component_group_deselection_in_edit_group(component)
         else:
             components = [component]
-        return components
+
+        for component in components:
+            if component and self._scene_mode is not SceneMode.NORMAL:
+                self._edited_components.append(component)
+            self.component_pasted.emit(component)
 
     def _handle_pasted_component_group_deselection_in_edit_group(self, group: ComponentGroup) -> List[BaseComponent]:
         """
@@ -466,7 +445,7 @@ class ExtendedScene(QGraphicsView):
                 continue
 
             component.set_position_after_paste(self._mouse_pos, QPointF(*component_data["pos"]), left_top)
-            self._add_component_to_scene(component)
+            self.add_component(component)
             component.setFlag(QGraphicsItem.ItemIsMovable, True)
             component.setFlag(QGraphicsItem.ItemIsSelectable, True)
             component.setSelected(True)
@@ -484,7 +463,7 @@ class ExtendedScene(QGraphicsView):
         self._edited_components = []
         if self._edited_group:
             for child_item in self._edited_group.set_edit_group_mode():
-                self._add_component_to_scene(child_item)
+                self.add_component(child_item)
                 self._edited_components.append(child_item)
                 child_item.setFlag(QGraphicsItem.ItemIsMovable, True)
                 child_item.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -602,18 +581,15 @@ class ExtendedScene(QGraphicsView):
         self.scene().addItem(self._current_component)
         self._operation = ExtendedScene.Operation.CREATE_COMPONENT
 
-    def add_component(self, component: QGraphicsItem) -> Optional[QGraphicsItem]:
+    def add_component(self, component: QGraphicsItem) -> None:
         """
         :param component: component to be added to the scene.
-        :return:
         """
 
-        modified_component = self._modify_component_to_add_to_scene(component)
-        if modified_component:
-            self._add_component_to_scene(modified_component)
-        else:
-            logger.debug("%s was not added to the scene", component)
-        return modified_component
+        self._components.append(component)
+        self.scene().addItem(component)
+        self._connect_component_to_signals(component)
+        logger.debug("%s added to the scene", component)
 
     def allow_drag(self, allow: bool = True) -> None:
         """
@@ -621,6 +597,9 @@ class ExtendedScene(QGraphicsView):
         """
 
         self._drag_allowed = allow
+        for component in self._components:
+            if isinstance(component, BaseComponent):
+                component.allow_drag(allow)
 
     def clear_scene(self) -> None:
         self.scene().clear()

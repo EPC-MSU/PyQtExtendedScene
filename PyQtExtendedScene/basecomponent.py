@@ -27,6 +27,7 @@ class BaseComponent:
         """
 
         super().__init__()
+        self._drag_allowed: bool = True
         self._draggable: bool = draggable
         self._scale_factor: float = 1
         self._scene_mode: SceneMode = SceneMode.NORMAL
@@ -70,6 +71,10 @@ class BaseComponent:
 
         return self._unique_selection
 
+    def _change_component_draggability_according_scene_flag(self) -> None:
+        draggable = self._draggable if self._drag_allowed else False
+        self.setFlag(QGraphicsItem.ItemIsMovable, draggable)
+
     def _create_selection_signal(self) -> None:
         self.selection_signal = get_signal_sender(bool)()
         self.selection_signal.component = self
@@ -79,6 +84,14 @@ class BaseComponent:
         self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
         self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
+
+    def allow_drag(self, allow: bool) -> None:
+        """
+        :param allow: if True, then components are allowed to be moved around the scene.
+        """
+
+        self._drag_allowed = allow
+        self._change_component_draggability_according_scene_flag()
 
     def convert_to_json(self) -> Dict[str, Any]:
         """
@@ -144,7 +157,7 @@ class BaseComponent:
 
         self._scene_mode = mode
         if self._scene_mode == SceneMode.NORMAL:
-            self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
+            self._change_component_draggability_according_scene_flag()
             self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
         elif self._scene_mode == SceneMode.EDIT and not self.is_in_group():
             self.setFlag(QGraphicsItem.ItemIsMovable, True)
