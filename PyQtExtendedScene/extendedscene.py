@@ -121,8 +121,6 @@ class ExtendedScene(QGraphicsView):
         """
 
         if not self._edited_components:
-            if self._edited_group:
-                self.scene().removeItem(self._edited_group)
             group = None
         else:
             group = self._edited_group or ComponentGroup()
