@@ -38,7 +38,7 @@ class ExtendedScene(QGraphicsView):
     component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
     custom_context_menu_requested: pyqtSignal = pyqtSignal(QPoint)
     edited_components_changed: pyqtSignal = pyqtSignal()
-    edited_group_component_signal: pyqtSignal = pyqtSignal(QGraphicsItem)
+    group_component_edited: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
     middle_clicked: pyqtSignal = pyqtSignal(QPointF)
     mouse_moved: pyqtSignal = pyqtSignal(QPointF)
@@ -848,7 +848,7 @@ class ExtendedScene(QGraphicsView):
         if self._scene_mode is SceneMode.EDIT_GROUP:
             group = self._add_edited_components_to_group()
             if group:
-                self.edited_group_component_signal.emit(group)
+                self.group_component_edited.emit(group)
 
         self._scene_mode = mode
         self.scene_mode_changed.emit(mode)
