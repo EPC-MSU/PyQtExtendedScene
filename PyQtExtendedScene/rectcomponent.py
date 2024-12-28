@@ -270,7 +270,8 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         """
 
         pos = point.pos() if isinstance(point, PointComponent) else point
-        return self.contains(self.mapFromScene(pos))
+        rect_on_scene = self.mapRectToScene(self.rect())
+        return rect_on_scene.contains(pos)
 
     def convert_to_json(self) -> Dict[str, Any]:
         """
