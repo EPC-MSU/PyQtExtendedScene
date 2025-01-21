@@ -90,7 +90,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
                  selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param rect: rect for component;
-        :param pen: common pen;
+        :param pen: pen for component;
         :param update_pen_for_selection: a function that returns a pen to paint a component when the component is
         selected;
         :param draggable: True if component can be dragged;

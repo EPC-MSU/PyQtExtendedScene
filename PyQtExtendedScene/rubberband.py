@@ -1,6 +1,7 @@
 from enum import auto, Enum
+from typing import Optional
 from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsRectItem
 from . import utils as ut
 from .rectcomponent import RectComponent
@@ -22,8 +23,12 @@ class RubberBand(RectComponent):
         HIDE = auto()  # hide the rubber band after the left mouse button is released
         SHOW = auto()  # leave the rubber band shown after the left mouse button is released
 
-    def __init__(self) -> None:
-        super().__init__(draggable=False, selectable=False)
+    def __init__(self, pen: Optional[QPen] = None) -> None:
+        """
+        :param pen: pen for rubber band.
+        """
+
+        super().__init__(pen=pen, draggable=False, selectable=False)
         self._display_mode: RubberBand.DisplayMode = RubberBand.DisplayMode.HIDE
         self._should_limit_size_to_background: bool = False
         self.hide()
@@ -53,6 +58,14 @@ class RubberBand(RectComponent):
         """
 
         self._display_mode = mode
+
+    def set_pen(self, pen: QPen) -> None:
+        """
+        :param pen: new pen.
+        """
+
+        super().set_pen(pen)
+        self._update_pen_for_selection = ut.get_function_to_update_dashed_pen(self._pen)
 
     def set_rect(self, rect: QRectF) -> bool:
         """
