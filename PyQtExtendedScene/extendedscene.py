@@ -512,7 +512,7 @@ class ExtendedScene(QGraphicsView):
 
     def _set_editable_status_for_components(self) -> None:
         for component in self._edited_components:
-            if isinstance(component, (PointComponent, RectComponent)):
+            if isinstance(component, BaseComponent):
                 component.set_editable(True, self._pen_to_edit)
 
     def _set_new_rect_for_rubber_band(self) -> bool:
@@ -855,14 +855,8 @@ class ExtendedScene(QGraphicsView):
 
         if mode is SceneMode.EDIT:
             self._edited_components = self._components[:]
-            for component in self._edited_components:
-                if isinstance(component, RectComponent):
-                    component.set_editable(True, self._pen_to_edit)
         elif mode is SceneMode.EDIT_GROUP:
             self._remove_items_from_edited_group()
-            for component in self._edited_components:
-                if isinstance(component, RectComponent):
-                    component.set_editable(True, self._pen_to_edit)
         else:
             self._edited_components = []
 

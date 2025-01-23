@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional
 from PyQt5.QtCore import QPointF
+from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem
+from . import utils as ut
 from .scenemode import SceneMode
 from .sender import get_signal_sender
 
@@ -18,8 +20,13 @@ class BaseComponent:
         ...
     """
 
-    def __init__(self, draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
+    PEN_COLOR: QColor = QColor("#0047AB")
+    PEN_WIDTH: float = 2
+
+    def __init__(self, pen: Optional[QPen] = None, draggable: bool = True, selectable: bool = True,
+                 unique_selection: bool = False) -> None:
         """
+        :param pen: pen;
         :param draggable: True if component can be dragged in common mode;
         :param selectable: True if component can be selected in common mode;
         :param unique_selection: True if selecting this component should reset all others selections in common mode
@@ -30,6 +37,8 @@ class BaseComponent:
         self._drag_allowed: bool = True
         self._draggable: bool = draggable
         self._editable: bool = False
+        self._pen: QPen = pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH)
+        self._pen_to_edit: QPen = QPen(self._pen)
         self._scale_factor: float = 1
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._selectable: bool = selectable
@@ -142,12 +151,15 @@ class BaseComponent:
             if item_class != BaseComponent:
                 return item_class().itemChange(change, value)
 
-    def set_editable(self, editable: bool) -> None:
+    def set_editable(self, editable: bool, pen: Optional[QPen] = None) -> None:
         """
-        :param editable: if True, then the component can be edited.
+        :param editable: if True, then the component can be edited;
+        :param pen: pen to be used to draw the component when editing.
         """
 
         self._editable = editable
+        self._pen_to_edit = pen or self._pen_to_edit
+        self.setPen(self._pen_to_edit if self._editable else self._pen)
 
     def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left_top: QPointF) -> None:
         """

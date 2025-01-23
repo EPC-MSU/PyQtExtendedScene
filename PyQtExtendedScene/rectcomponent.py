@@ -81,8 +81,6 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
                Mode.RESIZE_TOP: Qt.SizeVerCursor}
     DIAGONAL_PORTION: float = 0.05
     MIN_SIZE: float = 2
-    PEN_COLOR: QColor = QColor("#0047AB")
-    PEN_WIDTH: float = 2
     Z_VALUE: float = 1
 
     def __init__(self, rect: Optional[QRectF] = None, pen: Optional[QPen] = None,
@@ -100,11 +98,9 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         """
 
         QGraphicsRectItem.__init__(self)
-        BaseComponent.__init__(self, draggable, selectable, unique_selection)
+        BaseComponent.__init__(self, pen, draggable, selectable, unique_selection)
 
         self._mode: RectComponent.Mode = RectComponent.Mode.NO_ACTION
-        self._pen: QPen = pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH)
-        self._pen_to_edit: QPen = QPen(self._pen)
         self._update_pen_for_selection: Optional[Callable[[], QPen]] = (update_pen_for_selection or
                                                                         ut.get_function_to_update_dashed_pen(self._pen))
         self._x_fixed: Optional[float] = None
@@ -385,16 +381,6 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         bottom = max(rect.bottom(), current_rect_at_scene.bottom())
         self.setRect(QRectF(0, 0, right - left, bottom - top))
         self.setPos(left, top)
-
-    def set_editable(self, editable: bool, pen: Optional[QPen] = None) -> None:
-        """
-        :param editable: if True, then the component can be edited;
-        :param pen: pen to be used to draw the component when editing.
-        """
-
-        super().set_editable(editable)
-        self._pen_to_edit = pen or self._pen_to_edit
-        self.setPen(self._pen_to_edit if self._editable else self._pen)
 
     def set_pen(self, pen: QPen) -> None:
         """
