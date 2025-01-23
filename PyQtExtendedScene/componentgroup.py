@@ -28,7 +28,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         """
 
         QGraphicsItemGroup.__init__(self)
-        BaseComponent.__init__(self, draggable, selectable, unique_selection)
+        BaseComponent.__init__(self, draggable=draggable, selectable=selectable, unique_selection=unique_selection)
 
         self._animation_timer: Optional[QTimer] = None
         self._scale_changed = get_signal_sender(float)()

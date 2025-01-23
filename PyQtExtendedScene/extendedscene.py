@@ -475,8 +475,10 @@ class ExtendedScene(QGraphicsView):
 
     def _restore_editable_status_for_components(self) -> None:
         for component in self._edited_components:
-            if isinstance(component, BaseComponent):
+            try:
                 component.set_editable(False)
+            except Exception:
+                logger.debug("Failed to call 'set_editable' method on component %s", component)
 
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
         """
@@ -512,8 +514,10 @@ class ExtendedScene(QGraphicsView):
 
     def _set_editable_status_for_components(self) -> None:
         for component in self._edited_components:
-            if isinstance(component, BaseComponent):
+            try:
                 component.set_editable(True, self._pen_to_edit)
+            except Exception:
+                logger.debug("Failed to call 'set_editable' method on component %s", component)
 
     def _set_new_rect_for_rubber_band(self) -> bool:
         """
