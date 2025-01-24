@@ -1,7 +1,7 @@
 from enum import auto, Enum
 from typing import Optional
 from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QColor, QPen
+from PyQt5.QtGui import QColor, QPen, QBrush
 from PyQt5.QtWidgets import QGraphicsRectItem
 from . import utils as ut
 from .rectcomponent import RectComponent
@@ -59,12 +59,13 @@ class RubberBand(RectComponent):
 
         self._display_mode = mode
 
-    def set_pen(self, pen: QPen) -> None:
+    def set_parameters(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None) -> None:
         """
-        :param pen: new pen.
+        :param pen: pen for component;
+        :param brush: brush for component.
         """
 
-        super().set_pen(pen)
+        super().set_parameters(pen=pen, brush=brush)
         self._update_pen_for_selection = ut.get_function_to_update_dashed_pen(self._pen)
 
     def set_rect(self, rect: QRectF) -> bool:

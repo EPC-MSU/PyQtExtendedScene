@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QColor, QPen
+from PyQt5.QtGui import QBrush, QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem
 from . import utils as ut
 from .scenemode import SceneMode
@@ -23,10 +23,11 @@ class BaseComponent:
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
 
-    def __init__(self, pen: Optional[QPen] = None, draggable: bool = True, selectable: bool = True,
-                 unique_selection: bool = False) -> None:
+    def __init__(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None, draggable: bool = True,
+                 selectable: bool = True, unique_selection: bool = False) -> None:
         """
-        :param pen: pen;
+        :param pen: pen for component;
+        :param brush: brush for component;
         :param draggable: True if component can be dragged in common mode;
         :param selectable: True if component can be selected in common mode;
         :param unique_selection: True if selecting this component should reset all others selections in common mode
@@ -34,6 +35,7 @@ class BaseComponent:
         """
 
         super().__init__()
+        self._brush: QBrush = brush or QBrush()
         self._drag_allowed: bool = True
         self._draggable: bool = draggable
         self._editable: bool = False
@@ -108,8 +110,12 @@ class BaseComponent:
         :return: dictionary with basic object attributes.
         """
 
-        return {"class": self.__class__.__name__,
+        return {"brush_color": self._brush.color().rgba(),
+                "brush_style": self._brush.style(),
+                "class": self.__class__.__name__,
                 "draggable": self._draggable,
+                "pen_color": self._pen.color().rgba(),
+                "pen_width": self._pen.widthF(),
                 "selectable": self._selectable,
                 "unique_selection": self._unique_selection,
                 "pos": (self.scenePos().x(), self.scenePos().y())}
@@ -159,7 +165,12 @@ class BaseComponent:
 
         self._editable = editable
         self._pen_to_edit = pen or self._pen_to_edit
-        self.setPen(self._pen_to_edit if self._editable else self._pen)
+
+        if hasattr(self, "setPen"):
+            self.setPen(self._pen_to_edit if self._editable else self._pen)
+
+        if hasattr(self, "setBrush"):
+            self.setBrush(QBrush() if self._editable else self._brush)
 
     def set_position_after_paste(self, mouse_pos: QPointF, item_pos: QPointF, left_top: QPointF) -> None:
         """

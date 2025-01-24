@@ -23,11 +23,9 @@ class MyComponent(PointComponent):
         :param description: some description for the component.
         """
 
-        super().__init__(MyComponent.NORMAL_SIZE, draggable=True, selectable=True)
+        super().__init__(MyComponent.NORMAL_SIZE, brush=QBrush(QColor(0xFFFF00)), draggable=True, selectable=True)
         # Add description to our object - it will be used in "click" callback function
         self._descr: str = description
-        # ... yellow circle
-        self.setBrush(QBrush(QColor(0xFFFF00)))
         self.setPos(x, y)
 
     @property

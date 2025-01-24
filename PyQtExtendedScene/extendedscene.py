@@ -578,8 +578,8 @@ class ExtendedScene(QGraphicsView):
         if self._current_component:
             self.scene().removeItem(self._current_component)
 
-        self._current_component = PointComponent(self._point_radius, self._point_pen, self._scale,
-                                                 self._point_increase_factor)
+        self._current_component = PointComponent(self._point_radius, self._point_pen, scale=self._scale,
+                                                 increase_factor=self._point_increase_factor)
         self._current_component.setPos(pos)
         self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)

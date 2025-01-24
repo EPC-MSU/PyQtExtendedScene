@@ -32,22 +32,19 @@ class Dialog(QDialog):
         widget.set_drawing_mode(DrawingMode.ONLY_IN_BACKGROUND)
         widget.setBackgroundBrush(QBrush(QColor("white")))
 
-        point_component = PointComponent(4, draggable=False, selectable=True)
-        point_component.setBrush(QBrush(QColor("red")))
+        point_component = PointComponent(4, brush=QBrush(QColor("red")), draggable=False, selectable=True)
         point_component.setPos(100, 300)
         widget.add_component(point_component)
 
-        rect_component = RectComponent(QRectF(0, 0, 100, 150), draggable=False, selectable=True)
+        rect_component = RectComponent(QRectF(0, 0, 100, 150), brush=QBrush(QColor("red")), draggable=False,
+                                       selectable=True)
         rect_component.setPos(100, 100)
-        rect_component.setBrush(QBrush(QColor("red")))
         widget.add_component(rect_component)
 
-        point_component_for_group = PointComponent(4)
-        point_component_for_group.setBrush(QBrush(QColor("green")))
+        point_component_for_group = PointComponent(4, brush=QBrush(QColor("green")))
         point_component_for_group.setPos(400, 300)
 
-        rect_component_for_group = RectComponent(QRectF(0, 0, 200, 100))
-        rect_component_for_group.setBrush(QBrush(QColor("green")))
+        rect_component_for_group = RectComponent(QRectF(0, 0, 200, 100), brush=QBrush(QColor("green")))
         rect_component_for_group.setPos(400, 100)
 
         group = ComponentGroup()

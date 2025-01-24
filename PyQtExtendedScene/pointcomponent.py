@@ -15,12 +15,13 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     RADIUS: float = 4
     Z_VALUE: float = 2
 
-    def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, scale: Optional[float] = None,
-                 increase_factor: Optional[float] = None, draggable: bool = True, selectable: bool = True,
-                 unique_selection: bool = False) -> None:
+    def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, brush: Optional[QBrush] = None,
+                 scale: Optional[float] = None, increase_factor: Optional[float] = None, draggable: bool = True,
+                 selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param radius: point radius;
-        :param pen: pen;
+        :param pen: pen for component;
+        :param brush: brush for component;
         :param scale: scale factor;
         :param increase_factor: point radius increase factor when selecting a point;
         :param draggable: True if component can be dragged;
@@ -30,7 +31,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         QGraphicsEllipseItem.__init__(self)
-        BaseComponent.__init__(self, pen, draggable, selectable, unique_selection)
+        BaseComponent.__init__(self, pen, brush, draggable, selectable, unique_selection)
 
         self._increase_factor: float = increase_factor or self.INCREASE_FACTOR
         self._r: float = radius or self.RADIUS
@@ -47,10 +48,10 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         pen = ut.create_cosmetic_pen(QColor(data["pen_color"]), data["pen_width"])
-        component = PointComponent(data["radius"], pen, increase_factor=data["increase_factor"],
+        brush = QBrush(QColor(data["brush_color"]), data["brush_style"])
+        component = PointComponent(data["radius"], pen, brush, increase_factor=data["increase_factor"],
                                    draggable=data["draggable"], selectable=data["selectable"],
                                    unique_selection=data["unique_selection"])
-        component.setBrush(QBrush(QColor(data["brush_color"]), data["brush_style"]))
         return component
 
     def _set_rect(self, radius: Optional[float]) -> None:
@@ -68,11 +69,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         return {**super().convert_to_json(),
-                "brush_color": self.brush().color().rgba(),
-                "brush_style": self.brush().style(),
                 "increase_factor": self._increase_factor,
-                "pen_color": self._pen.color().rgba(),
-                "pen_width": self._pen.widthF(),
                 "radius": self._r}
 
     def copy(self) -> Tuple["PointComponent", QPointF]:
@@ -80,9 +77,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :return: copied component and its current position.
         """
 
-        component = PointComponent(self._r, self.pen(), self._scale_factor, self._increase_factor, self._draggable,
-                                   self._selectable, self._unique_selection)
-        component.setBrush(self.brush())
+        component = PointComponent(self._r, QPen(self._pen), QBrush(self._brush), self._scale_factor,
+                                   self._increase_factor, self._draggable, self._selectable, self._unique_selection)
         return component, self.scenePos()
 
     def handle_selection(self, selected: bool = True) -> None:
@@ -110,18 +106,18 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
                        increase_factor: Optional[float] = None) -> None:
         """
         :param radius: point radius;
-        :param pen: pen;
-        :param brush: brush;
+        :param pen: pen for component;
+        :param brush: brush for component;
         :param increase_factor: point radius increase factor when selecting a point.
         """
 
+        self._brush = brush or self._brush
         self._increase_factor = increase_factor or self._increase_factor
-        self._r = radius or self._r
         self._pen = pen or self._pen
+        self._r = radius or self._r
 
+        self.setBrush(self._brush)
         self.setPen(self._pen)
-        if brush:
-            self.setBrush(brush)
         self._set_rect(self._r)
 
     def update_scale(self, scale_factor: float) -> None:
