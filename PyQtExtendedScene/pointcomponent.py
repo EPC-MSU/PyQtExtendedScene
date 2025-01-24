@@ -22,6 +22,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :param radius: point radius;
         :param pen: pen;
         :param scale: scale factor;
+        :param increase_factor: point radius increase factor when selecting a point;
         :param draggable: True if component can be dragged;
         :param selectable: True if component can be selected;
         :param unique_selection: True if selecting this component should reset all others selections
@@ -35,9 +36,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         self._r: float = radius or self.RADIUS
         self._scale_factor: float = scale or 1
 
-        self.setPen(self._pen)
         self.setZValue(self.Z_VALUE)
-        self._set_rect(self._r)
+        self.set_parameters()
 
     @classmethod
     def create_from_json(cls, data: Dict[str, Any]) -> "PointComponent":
@@ -91,7 +91,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         unselected.
         """
 
-        self._set_rect(self._r * self.INCREASE_FACTOR if selected else self._r)
+        self._set_rect(self._r * self._increase_factor if selected else self._r)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
         """
@@ -106,10 +106,28 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
 
+    def set_parameters(self, radius: Optional[float] = None, pen: Optional[QPen] = None, brush: Optional[QBrush] = None,
+                       increase_factor: Optional[float] = None) -> None:
+        """
+        :param radius: point radius;
+        :param pen: pen;
+        :param brush: brush;
+        :param increase_factor: point radius increase factor when selecting a point.
+        """
+
+        self._increase_factor = increase_factor or self._increase_factor
+        self._r = radius or self._r
+        self._pen = pen or self._pen
+
+        self.setPen(self._pen)
+        if brush:
+            self.setBrush(brush)
+        self._set_rect(self._r)
+
     def update_scale(self, scale_factor: float) -> None:
         """
         :param scale_factor: new scale factor.
         """
 
         super().update_scale(scale_factor)
-        self._set_rect(self._r * self.INCREASE_FACTOR if self._r is not None and self.is_selected() else self._r)
+        self._set_rect(self._r * self._increase_factor if self._r is not None and self.is_selected() else self._r)
