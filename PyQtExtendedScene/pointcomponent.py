@@ -116,8 +116,8 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         self._pen = pen or self._pen
         self._r = radius or self._r
 
-        self.setBrush(self._brush)
-        self.setPen(self._pen)
+        self.setBrush(QBrush() if self._editable else self._brush)
+        self.setPen(self._pen_to_edit if self._editable else self._pen)
         self._set_rect(self._r)
 
     def update_scale(self, scale_factor: float) -> None:
