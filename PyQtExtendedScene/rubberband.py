@@ -75,9 +75,10 @@ class RubberBand(RectComponent):
         """
 
         if rect.height() and rect.width():
-            self.setRect(rect)
             if self._should_limit_size_to_background:
                 self._limit_size_to_background()
+            else:
+                self.setRect(rect)
             self.setVisible(self._display_mode is RubberBand.DisplayMode.SHOW)
             return True
 
