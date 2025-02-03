@@ -33,11 +33,15 @@ class RubberBand(RectComponent):
         self._should_limit_size_to_background: bool = False
         self.hide()
 
-    def _limit_size_to_background(self) -> None:
+    def _limit_size_to_background(self, rect: QRectF) -> None:
+        """
+        :param rect: new rectangle for rubber band.
+        """
+
         if not hasattr(self.scene(), "background") or self.scene().background is None:
             return
 
-        rect = self.mapRectToScene(self.rect())
+        rect = self.mapRectToScene(rect)
         background_rect = self.scene().background.sceneBoundingRect()
         limit_rect = ut.fit_rect_to_background(background_rect, rect)
         if not limit_rect:
@@ -76,7 +80,7 @@ class RubberBand(RectComponent):
 
         if rect.height() and rect.width():
             if self._should_limit_size_to_background:
-                self._limit_size_to_background()
+                self._limit_size_to_background(rect)
             else:
                 self.setRect(rect)
             self.setVisible(self._display_mode is RubberBand.DisplayMode.SHOW)
