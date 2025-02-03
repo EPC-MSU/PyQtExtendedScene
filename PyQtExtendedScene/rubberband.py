@@ -34,7 +34,7 @@ class RubberBand(RectComponent):
         self.hide()
 
     def _limit_size_to_background(self) -> None:
-        if not hasattr(self.scene(), "background"):
+        if not hasattr(self.scene(), "background") or self.scene().background is None:
             return
 
         rect = self.mapRectToScene(self.rect())
