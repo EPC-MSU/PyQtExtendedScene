@@ -150,7 +150,7 @@ class BaseComponent:
         :param value: the new value, the type of the value depends on change.
         """
 
-        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+        if change == QGraphicsItem.ItemSelectedChange:
             self.selection_signal.emit(value)
 
         for item_class in self.__class__.__bases__:
