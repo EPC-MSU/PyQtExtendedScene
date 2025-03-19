@@ -2,10 +2,12 @@ import json
 import logging
 from enum import auto, Enum
 from typing import Any, Dict, List, Optional
-from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRectF, QSize,
-                          QSizeF, Qt, QTimer)
-from PyQt5.QtGui import QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPen, QPixmap, QWheelEvent
-from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QShortcut
+from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRect, QRectF,
+                          QSize, QSizeF, Qt, QTimer)
+from PyQt5.QtGui import (QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap,
+                         QWheelEvent)
+from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QRubberBand,
+                             QShortcut)
 from . import utils as ut
 from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
@@ -137,6 +139,9 @@ class ExtendedScene(QGraphicsView):
         self._animation_timer.timeout.connect(self._rubber_band.update_selection)
         self.scene().addItem(self._rubber_band)
 
+        self._tmp_rubber_band: QRubberBand = QRubberBand(QRubberBand.Rectangle, self)
+        self._tmp_rubber_band_origin: QPoint = QPoint()
+
     def _change_component_draggability_according_scene_flag(self, component: QGraphicsItem) -> None:
         """
         :param component: the component that needs to be made movable or non-movable.
@@ -241,6 +246,15 @@ class ExtendedScene(QGraphicsView):
     def _handle_component_resize_by_mouse(self) -> None:
         self._current_component.resize_by_mouse(self._mouse_pos)
 
+    def _handle_component_selection_by_rubber_band(self) -> None:
+        rect = QRect(self._tmp_rubber_band_origin, self.mapFromScene(self._mouse_pos)).normalized()
+        self._tmp_rubber_band.setGeometry(rect)
+
+        self.remove_all_selections()
+        path = QPainterPath()
+        path.addRect(QRectF(self.mapToScene(self._tmp_rubber_band_origin), self._mouse_pos).normalized())
+        self.scene().setSelectionArea(path)
+
     @pyqtSlot(bool)
     @ut.send_edited_components_changed_signal
     def _handle_component_selection_changed(self, selected: bool) -> None:
@@ -342,7 +356,7 @@ class ExtendedScene(QGraphicsView):
             self.right_clicked.emit(pos)
 
         if self._scene_mode is SceneMode.NORMAL:
-            self._set_select_component_mode()
+            self._set_select_component_mode(pos)
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if self._shift_pressed:
                 self._start_create_point_component_by_mouse(pos)
@@ -356,6 +370,7 @@ class ExtendedScene(QGraphicsView):
         """
 
         if self._scene_mode is SceneMode.NORMAL and self._operation is ExtendedScene.Operation.SELECT_COMPONENT:
+            self._tmp_rubber_band.hide()
             rubber_band_changed = self._set_new_rect_for_rubber_band()
             if not rubber_band_changed:
                 self._send_custom_context_menu_signal(pos)
@@ -521,7 +536,7 @@ class ExtendedScene(QGraphicsView):
         :return: True if the rubber band geometry has been changed, otherwise False.
         """
 
-        rect = self.mapToScene(self.rubberBandRect()).boundingRect()
+        rect = self.mapToScene(self._tmp_rubber_band.rect()).boundingRect()
         return self._rubber_band.set_rect(rect)
 
     def _set_no_action_mode(self) -> None:
@@ -552,8 +567,14 @@ class ExtendedScene(QGraphicsView):
             scene.setItemIndexMethod(QGraphicsScene.NoIndex)
         self.setScene(scene)
 
-    def _set_select_component_mode(self) -> None:
-        self.setDragMode(QGraphicsView.RubberBandDrag)
+    def _set_select_component_mode(self, pos: QPointF) -> None:
+        """
+        :param pos: mouse position.
+        """
+
+        self._tmp_rubber_band_origin = self.mapFromScene(pos)
+        self._tmp_rubber_band.setGeometry(QRect(self._tmp_rubber_band_origin, QSize()))
+        self._tmp_rubber_band.show()
         self._operation = ExtendedScene.Operation.SELECT_COMPONENT
 
     def _set_view_params(self) -> None:
@@ -724,6 +745,12 @@ class ExtendedScene(QGraphicsView):
         self.mouse_moved.emit(self._mouse_pos)
         if self._operation is ExtendedScene.Operation.CREATE_COMPONENT:
             self._handle_component_creation_by_mouse()
+            event.accept()
+            return
+
+        if self._operation is ExtendedScene.Operation.SELECT_COMPONENT:
+            self._handle_component_selection_by_rubber_band()
+            event.accept()
             return
 
         if self._operation is ExtendedScene.Operation.RESIZE_COMPONENT:
@@ -744,6 +771,8 @@ class ExtendedScene(QGraphicsView):
             self._handle_mouse_middle_button_press(pos)
         elif event.button() == Qt.RightButton:
             self._handle_mouse_right_button_press(item, pos)
+            event.accept()
+            return
 
         super().mousePressEvent(event)
 

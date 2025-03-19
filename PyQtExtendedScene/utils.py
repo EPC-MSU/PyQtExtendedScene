@@ -28,11 +28,7 @@ def fit_rect_to_background(background_rect: QRectF, rect: QRectF) -> Optional[QR
             background_rect.bottom() < rect.top() or rect.bottom() < background_rect.top()):
         return None
 
-    left = max(rect.left(), background_rect.left())
-    right = min(rect.right(), background_rect.right())
-    top = max(rect.top(), background_rect.top())
-    bottom = min(rect.bottom(), background_rect.bottom())
-    return QRectF(left, top, right - left, bottom - top)
+    return rect.intersected(background_rect)
 
 
 def get_class_by_name(class_name: str) -> Optional[type]:
