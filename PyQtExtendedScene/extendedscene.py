@@ -536,7 +536,12 @@ class ExtendedScene(QGraphicsView):
         :return: True if the rubber band geometry has been changed, otherwise False.
         """
 
-        rect = self.mapToScene(self._tmp_rubber_band.rect()).boundingRect()
+        top_left = self._tmp_rubber_band.pos()
+        top_left = self.mapToScene(top_left)
+        bottom_right = QPoint(self._tmp_rubber_band.x() + self._tmp_rubber_band.width(),
+                              self._tmp_rubber_band.y() + self._tmp_rubber_band.height())
+        bottom_right = self.mapToScene(bottom_right)
+        rect = QRectF(top_left, bottom_right)
         return self._rubber_band.set_rect(rect)
 
     def _set_no_action_mode(self) -> None:
