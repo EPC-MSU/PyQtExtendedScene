@@ -78,7 +78,7 @@ class RubberBand(RectComponent):
         :return: True if the rubber band geometry has been changed, otherwise False.
         """
 
-        if rect.height() and rect.width():
+        if rect.height() > self.MIN_SIZE and rect.width() > self.MIN_SIZE:
             if self._should_limit_size_to_background:
                 self._limit_size_to_background(rect)
             else:
