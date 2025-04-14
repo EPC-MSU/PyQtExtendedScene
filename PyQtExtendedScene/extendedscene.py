@@ -4,8 +4,8 @@ from enum import auto, Enum
 from typing import Any, Dict, List, Optional
 from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRect, QRectF,
                           QSize, QSizeF, Qt, QTimer)
-from PyQt5.QtGui import (QBrush, QColor, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap,
-                         QWheelEvent)
+from PyQt5.QtGui import (QBrush, QColor, QEnterEvent, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPainterPath,
+                         QPen, QPixmap, QWheelEvent)
 from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QRubberBand,
                              QShortcut)
 from . import utils as ut
@@ -41,6 +41,7 @@ class ExtendedScene(QGraphicsView):
     group_component_edited: pyqtSignal = pyqtSignal(QGraphicsItem)
     left_clicked: pyqtSignal = pyqtSignal(QPointF)
     middle_clicked: pyqtSignal = pyqtSignal(QPointF)
+    mouse_entered: pyqtSignal = pyqtSignal(bool)
     mouse_moved: pyqtSignal = pyqtSignal(QPointF)
     on_component_left_click: pyqtSignal = pyqtSignal(QGraphicsItem)
     on_component_right_click: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -681,6 +682,14 @@ class ExtendedScene(QGraphicsView):
         self.disable_shortcuts()
         self._enable_shortcuts()
 
+    def enterEvent(self, event: QEnterEvent) -> None:
+        """
+        :param event: enter event.
+        """
+
+        self.mouse_entered.emit(True)
+        super().enterEvent(event)
+
     def fit_in_view(self) -> None:
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatioByExpanding)
 
@@ -731,6 +740,14 @@ class ExtendedScene(QGraphicsView):
 
         if event.key() == Qt.Key_Shift and self._scene_mode is not SceneMode.NORMAL:
             self._shift_pressed = False
+
+    def leaveEvent(self, event: QEnterEvent) -> None:
+        """
+        :param event: enter event.
+        """
+
+        self.mouse_entered.emit(False)
+        super().leaveEvent(event)
 
     def limit_rubber_band_size_to_background(self, limit: bool) -> None:
         """
