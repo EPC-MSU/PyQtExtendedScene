@@ -223,7 +223,7 @@ class ExtendedScene(QGraphicsView):
 
         for item in self.items(event.pos()):
             if isinstance(item, BaseComponent) and not isinstance(item, RubberBand):
-                return item
+                return item.group() if item.group() else item
 
         return None
 
