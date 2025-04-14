@@ -310,10 +310,9 @@ class ExtendedScene(QGraphicsView):
         """
 
         self._rubber_band.hide()
+        self.left_clicked.emit(pos)
         if item:
             self.on_component_left_click.emit(item)
-        else:
-            self.left_clicked.emit(pos)
 
         if (self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP) and item in self._edited_components and
                 self._set_resize_mode_for_rect_component(item)):
@@ -350,10 +349,9 @@ class ExtendedScene(QGraphicsView):
         :param pos: mouse position.
         """
 
+        self.right_clicked.emit(pos)
         if item:
             self.on_component_right_click.emit(item)
-        else:
-            self.right_clicked.emit(pos)
 
         if self._scene_mode is SceneMode.NORMAL:
             self._set_select_component_mode(pos)
