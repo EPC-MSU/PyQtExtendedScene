@@ -81,7 +81,7 @@ class ExtendedScene(QGraphicsView):
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: List[BaseComponent] = []
-        self._pen_to_edit: QPen = ut.create_cosmetic_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
+        self._pen_to_edit: QPen = ut.create_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
         self._point_increase_factor: float = self.POINT_INCREASE_FACTOR
         self._point_radius: float = self.POINT_RADIUS
         self._scale: float = 1.0
@@ -136,7 +136,8 @@ class ExtendedScene(QGraphicsView):
         return group
 
     def _add_rubber_band(self) -> None:
-        self._rubber_band: RubberBand = RubberBand()
+        self._rubber_band: RubberBand = RubberBand(scale=self._scale)
+        self.scale_changed.connect(self._rubber_band.update_scale)
         self._animation_timer.timeout.connect(self._rubber_band.update_selection)
         self.scene().addItem(self._rubber_band)
 
@@ -194,6 +195,7 @@ class ExtendedScene(QGraphicsView):
             shortcut.activated.connect(self._combination_and_slots[combination])
 
     def _finish_create_point_component_by_mouse(self) -> None:
+        self.scale_changed.disconnect(self._current_component.update_scale)
         self._current_component.setSelected(False)
         self.scene().removeItem(self._current_component)
         modified_component = self._modify_component_to_add_to_scene(self._current_component)
@@ -205,6 +207,7 @@ class ExtendedScene(QGraphicsView):
         self._operation = ExtendedScene.Operation.NO_ACTION
 
     def _finish_create_rect_component_by_mouse(self) -> None:
+        self.scale_changed.disconnect(self._current_component.update_scale)
         self.scene().removeItem(self._current_component)
         if self._current_component.check_big_enough():
             self._current_component.fix_mode(RectComponent.Mode.NO_ACTION)
@@ -603,6 +606,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component = PointComponent(self._point_radius, scale=self._scale,
                                                  increase_factor=self._point_increase_factor)
         self._current_component.setPos(pos)
+        self.scale_changed.connect(self._current_component.update_scale)
         self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)
         self._operation = ExtendedScene.Operation.CREATE_COMPONENT
@@ -615,8 +619,9 @@ class ExtendedScene(QGraphicsView):
         if self._current_component:
             self.scene().removeItem(self._current_component)
 
-        self._current_component = RectComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
+        self._current_component = RectComponent(QRectF(QPointF(0, 0), QPointF(0, 0)), scale=self._scale)
         self._current_component.setPos(pos)
+        self.scale_changed.connect(self._current_component.update_scale)
         self._current_component.fix_mode(RectComponent.Mode.RESIZE_ANY)
         self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)

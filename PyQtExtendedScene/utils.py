@@ -5,7 +5,7 @@ from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPen
 
 
-def create_cosmetic_pen(color: QColor, width: float) -> QPen:
+def create_pen(color: QColor, width: float) -> QPen:
     """
     :param color: pen color;
     :param width: pen width.
@@ -13,7 +13,6 @@ def create_cosmetic_pen(color: QColor, width: float) -> QPen:
     """
 
     pen = QPen(QBrush(color), width)
-    pen.setCosmetic(True)
     return pen
 
 

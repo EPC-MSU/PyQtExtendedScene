@@ -29,6 +29,7 @@ class Dialog(QDialog):
             image = None
 
         widget = ExtendedScene(image)
+        widget.show_rubber_band_after_mouse_release()
         widget.set_drawing_mode(DrawingMode.ONLY_IN_BACKGROUND)
         widget.setBackgroundBrush(QBrush(QColor("white")))
 

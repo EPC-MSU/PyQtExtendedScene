@@ -23,11 +23,12 @@ class BaseComponent:
     PEN_COLOR: QColor = QColor("#0047AB")
     PEN_WIDTH: float = 2
 
-    def __init__(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None, draggable: bool = True,
-                 selectable: bool = True, unique_selection: bool = False) -> None:
+    def __init__(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None, scale: Optional[float] = None,
+                 draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param pen: pen for component;
         :param brush: brush for component;
+        :param scale: scale factor;
         :param draggable: True if component can be dragged in common mode;
         :param selectable: True if component can be selected in common mode;
         :param unique_selection: True if selecting this component should reset all others selections in common mode
@@ -39,9 +40,9 @@ class BaseComponent:
         self._drag_allowed: bool = True
         self._draggable: bool = draggable
         self._editable: bool = False
-        self._pen: QPen = pen or ut.create_cosmetic_pen(self.PEN_COLOR, self.PEN_WIDTH)
+        self._pen: QPen = pen or ut.create_pen(self.PEN_COLOR, self.PEN_WIDTH)
         self._pen_to_edit: QPen = QPen(self._pen)
-        self._scale_factor: float = 1
+        self._scale_factor: float = scale or 1
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._selectable: bool = selectable
         self._selected_at_group: bool = False
@@ -96,6 +97,17 @@ class BaseComponent:
         self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, self._draggable)
         self.setFlag(QGraphicsItem.ItemIsSelectable, self._selectable)
+
+    def _update_pen_width(self, pen: QPen, initial_pen_width: Optional[float] = None) -> None:
+        """
+        :param pen: pen that needs to be set and the width of which needs to be adjusted to scale;
+        :param initial_pen_width: pen width at scale 1.
+        """
+
+        initial_pen_width = initial_pen_width or pen.widthF()
+        pen = QPen(pen)
+        pen.setWidthF(initial_pen_width / self._scale_factor)
+        self.setPen(pen)
 
     def allow_drag(self, allow: bool) -> None:
         """
@@ -167,7 +179,7 @@ class BaseComponent:
         self._pen_to_edit = pen or self._pen_to_edit
 
         if hasattr(self, "setPen"):
-            self.setPen(self._pen_to_edit if self._editable else self._pen)
+            self._update_pen_width(self._pen_to_edit if self._editable else self._pen)
 
         if hasattr(self, "setBrush"):
             self.setBrush(QBrush() if self._editable else self._brush)
@@ -208,3 +220,5 @@ class BaseComponent:
         """
 
         self._scale_factor = scale_factor
+        if hasattr(self, "setPen"):
+            self._update_pen_width(self.pen(), self._pen.widthF())
