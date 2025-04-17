@@ -12,7 +12,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     """
 
     INCREASE_FACTOR: float = 2
-    RADIUS: float = 4
+    RADIUS: float = 2
     Z_VALUE: float = 2
 
     def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, brush: Optional[QBrush] = None,
@@ -59,7 +59,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         if radius is not None:
-            radius /= self._scale_factor
+            radius *= self._scale_factor
             self.setRect(-radius, -radius, 2 * radius, 2 * radius)
 
     def convert_to_json(self) -> Dict[str, Any]:

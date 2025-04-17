@@ -14,7 +14,7 @@ except ImportError:
 # Let's describe our own component
 class MyComponent(PointComponent):
 
-    NORMAL_SIZE: float = 10
+    NORMAL_SIZE: float = 5
 
     def __init__(self, x: float, y: float, description: str = "") -> None:
         """

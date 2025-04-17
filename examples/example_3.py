@@ -33,7 +33,7 @@ class Dialog(QDialog):
         widget.set_drawing_mode(DrawingMode.ONLY_IN_BACKGROUND)
         widget.setBackgroundBrush(QBrush(QColor("white")))
 
-        point_component = PointComponent(4, brush=QBrush(QColor("red")), draggable=False, selectable=True)
+        point_component = PointComponent(2, brush=QBrush(QColor("red")), draggable=False, selectable=True)
         point_component.setPos(100, 300)
         widget.add_component(point_component)
 
@@ -42,7 +42,7 @@ class Dialog(QDialog):
         rect_component.setPos(100, 100)
         widget.add_component(rect_component)
 
-        point_component_for_group = PointComponent(4, brush=QBrush(QColor("green")))
+        point_component_for_group = PointComponent(2, brush=QBrush(QColor("green")))
         point_component_for_group.setPos(400, 300)
 
         rect_component_for_group = RectComponent(QRectF(0, 0, 200, 100), brush=QBrush(QColor("green")))

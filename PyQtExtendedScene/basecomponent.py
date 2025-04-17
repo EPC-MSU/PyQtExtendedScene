@@ -21,7 +21,7 @@ class BaseComponent:
     """
 
     PEN_COLOR: QColor = QColor("#0047AB")
-    PEN_WIDTH: float = 2
+    PEN_WIDTH: float = 0.5
 
     def __init__(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None, scale: Optional[float] = None,
                  draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
@@ -106,7 +106,7 @@ class BaseComponent:
 
         initial_pen_width = initial_pen_width or pen.widthF()
         pen = QPen(pen)
-        pen.setWidthF(initial_pen_width / self._scale_factor)
+        pen.setWidthF(initial_pen_width * self._scale_factor)
         self.setPen(pen)
 
     def allow_drag(self, allow: bool) -> None:

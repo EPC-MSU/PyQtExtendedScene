@@ -27,12 +27,15 @@ class ExtendedScene(QGraphicsView):
     """
 
     PEN_COLOR_TO_EDIT: QColor = QColor("#007FFF")
-    PEN_WIDTH_TO_EDIT: float = 3
+    PEN_WIDTH_TO_EDIT: float = 1
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
+    MIN_DIMENSION: float = 64
     MIN_SCALE: float = 0.1
     POINT_INCREASE_FACTOR: float = 2
-    POINT_RADIUS: float = 4
+    POINT_RADIUS: float = 2
     UPDATE_INTERVAL_MS: int = 10  # msec
+    UPDATE_ZOOM_THRESHOLD: float = 1e-3
+    ZOOM_FACTOR: float = 1.25
     component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -84,7 +87,7 @@ class ExtendedScene(QGraphicsView):
         self._pen_to_edit: QPen = ut.create_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
         self._point_increase_factor: float = self.POINT_INCREASE_FACTOR
         self._point_radius: float = self.POINT_RADIUS
-        self._scale: float = 1.0
+        self._scale: float = self._get_physical_scale_factor()
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._shift_pressed: bool = False
         self._zoom_speed: float = zoom_speed
@@ -231,14 +234,40 @@ class ExtendedScene(QGraphicsView):
 
         return None
 
+    def _get_max_zoom_factor(self) -> float:
+        """
+        :return: maximum magnification factor.
+        """
+
+        height = ut.map_length_to_scene(self, self.viewport().height())
+        width = ut.map_length_to_scene(self, self.viewport().width())
+        return min(height, width) / self.MIN_DIMENSION
+
+    def _get_min_zoom_factor(self) -> float:
+        """
+        :return: minimum magnification factor.
+        """
+
+        return 0.8
+
+    def _get_physical_scale_factor(self) -> float:
+        """
+        :return: view physical scale factor (preserve size in millimeters).
+        """
+
+        length = 100.0
+        return ut.map_length_to_scene(self, length) * self.physicalDpiX() / (25.4 * length)
+
     def _get_zoom_factor(self, event: QWheelEvent) -> float:
         """
         :param event: wheel event.
         :return: zoom factor.
         """
 
-        zoom_factor = 1.0
-        zoom_factor += event.angleDelta().y() * self._zoom_speed
+        if event.angleDelta().y() > 0:
+            zoom_factor = min(self.ZOOM_FACTOR, self._get_max_zoom_factor())
+        else:
+            zoom_factor = max(1.0 / self.ZOOM_FACTOR, self._get_min_zoom_factor())
         return zoom_factor
 
     def _handle_component_creation_by_mouse(self) -> None:
@@ -928,12 +957,10 @@ class ExtendedScene(QGraphicsView):
         """
 
         zoom_factor = self._get_zoom_factor(event)
-        if self._scale * zoom_factor < ExtendedScene.MIN_SCALE and zoom_factor < 1.0:  # minimum allowed zoom
-            return
-
-        self.zoom(zoom_factor, event.pos())
-        self._scale *= zoom_factor
-        self.scale_changed.emit(self._scale)
+        if abs(zoom_factor - 1) > self.UPDATE_ZOOM_THRESHOLD:
+            self.zoom(zoom_factor, event.pos())
+            self._scale = self._get_physical_scale_factor()
+            self.scale_changed.emit(self._scale)
 
     def zoom(self, zoom_factor: float, pos: QPoint) -> None:  # pos in view coordinates
         """

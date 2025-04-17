@@ -1,8 +1,10 @@
+import math
 import sys
 import time
 from typing import Any, Callable, List, Optional
-from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtCore import QPoint, QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPen
+from PyQt5.QtWidgets import QGraphicsView
 
 
 def create_pen(color: QColor, width: float) -> QPen:
@@ -79,6 +81,18 @@ def get_left_top_pos(points: List[QPointF]) -> QPointF:
         if top is None or top > y:
             top = y
     return QPointF(left, top)
+
+
+def map_length_to_scene(view: QGraphicsView, length: float) -> float:
+    """
+    :param view: view whose scene you need to relate the length to;
+    :param length: length.
+    :return: length on scene.
+    """
+
+    point_1, point_2 = QPoint(0, 0), QPoint(0, length)
+    scene_point1, scene_point2 = view.mapToScene(point_1), view.mapToScene(point_2)
+    return math.sqrt((scene_point2.x() - scene_point1.x()) ** 2 + (scene_point2.y() - scene_point1.y()) ** 2)
 
 
 def send_edited_components_changed_signal(func):
