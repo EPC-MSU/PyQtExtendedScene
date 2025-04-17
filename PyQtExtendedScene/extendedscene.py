@@ -30,7 +30,6 @@ class ExtendedScene(QGraphicsView):
     PEN_WIDTH_TO_EDIT: float = 1
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
     MIN_DIMENSION: float = 64
-    MIN_SCALE: float = 0.1
     POINT_INCREASE_FACTOR: float = 2
     POINT_RADIUS: float = 2
     UPDATE_INTERVAL_MS: int = 10  # msec
@@ -875,21 +874,6 @@ class ExtendedScene(QGraphicsView):
         component.selection_signal.disconnect(self._handle_component_selection_changed)
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.disconnect(component.update_selection)
-
-    def scale_to_window_size(self, size: QSize) -> None:
-        """
-        Scale to window size.
-        For example, if you have window 600x600 and workspace background image 1200x1200, image will be scaled in 4x.
-        :param size: window size.
-        """
-
-        if self.background:
-            factor_x = size.width() / self.background.pixmap().width()
-            factor_y = size.height() / self.background.pixmap().height()
-            factor = max(min(factor_x, factor_y), ExtendedScene.MIN_SCALE)
-            self.resetTransform()
-            self._scale = factor
-            self.zoom(factor, QPoint(0, 0))
 
     def set_background(self, background: QPixmap) -> None:
         """
