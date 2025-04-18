@@ -165,3 +165,11 @@ scene.set_scene_mode(SceneMode.EDIT_GROUP)
 
 <img src="images/copy_group_component_and_paste_in_edit_group.gif" alt="Вставка скопированных компонентов в режиме редактирования составного компонента" style="zoom:50%;" />
 
+## Примечание
+
+При работе с объектами **PointComponent**, **RectComponent** и в целом **QGraphicsItem** надо помнить, что [**QGraphicsItem** не поддерживает использование косметических перьев ненулевой ширины](https://doc.qt.io/qt-6/qgraphicsitem.html#paint), то есть таких перьев:
+
+```python
+pen = Pen()
+pen.setCosmetic(True)
+```
