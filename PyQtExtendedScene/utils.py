@@ -7,6 +7,9 @@ from PyQt5.QtGui import QBrush, QColor, QPen
 from PyQt5.QtWidgets import QGraphicsView
 
 
+MIN_DIMENSION: float = 64
+
+
 def create_pen(color: QColor, width: float) -> QPen:
     """
     :param color: pen color;
@@ -81,6 +84,17 @@ def get_left_top_pos(points: List[QPointF]) -> QPointF:
         if top is None or top > y:
             top = y
     return QPointF(left, top)
+
+
+def get_max_zoom_factor(view: QGraphicsView) -> float:
+    """
+    :param view: view.
+    :return: maximum magnification factor.
+    """
+
+    disp_height = map_length_to_scene(view, view.viewport().height())
+    disp_width = map_length_to_scene(view, view.viewport().width())
+    return min(disp_height, disp_width) / MIN_DIMENSION
 
 
 def map_length_to_scene(view: QGraphicsView, length: float) -> float:

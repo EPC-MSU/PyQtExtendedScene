@@ -29,7 +29,6 @@ class ExtendedScene(QGraphicsView):
     PEN_COLOR_TO_EDIT: QColor = QColor("#007FFF")
     PEN_WIDTH_TO_EDIT: float = 1
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
-    MIN_DIMENSION: float = 64
     POINT_INCREASE_FACTOR: float = 2
     POINT_RADIUS: float = 2
     UPDATE_INTERVAL_MS: int = 10  # msec
@@ -101,10 +100,6 @@ class ExtendedScene(QGraphicsView):
         self._set_view_params()
         self._create_shortcuts()
         self._create_scale_sending_timer()
-
-    @pyqtSlot()
-    def _send_scale(self) -> None:
-        self.scale_changed.emit(self._scale)
 
     @property
     def background(self) -> Optional[QGraphicsPixmapItem]:
@@ -238,9 +233,7 @@ class ExtendedScene(QGraphicsView):
         :return: maximum magnification factor.
         """
 
-        height = ut.map_length_to_scene(self, self.viewport().height())
-        width = ut.map_length_to_scene(self, self.viewport().width())
-        return min(height, width) / self.MIN_DIMENSION
+        return ut.get_max_zoom_factor(self)
 
     def _get_min_zoom_factor(self) -> float:
         """
@@ -543,6 +536,10 @@ class ExtendedScene(QGraphicsView):
 
         if self.contextMenuPolicy() == Qt.CustomContextMenu:
             self.custom_context_menu_requested.emit(pos)
+
+    @pyqtSlot()
+    def _send_scale(self) -> None:
+        self.scale_changed.emit(self._scale)
 
     def _set_background(self, background: Optional[QPixmap] = None) -> None:
         """
@@ -944,7 +941,7 @@ class ExtendedScene(QGraphicsView):
         if abs(zoom_factor - 1) > self.UPDATE_ZOOM_THRESHOLD:
             self.zoom(zoom_factor, event.pos())
             self._scale = self._get_physical_scale_factor()
-            self.scale_changed.emit(self._scale)
+            self._send_scale()
 
     def zoom(self, zoom_factor: float, pos: QPoint) -> None:  # pos in view coordinates
         """
