@@ -89,7 +89,15 @@ scene.set_scene_mode(SceneMode.NORMAL)
   scene.show_rubber_band_after_mouse_release()
   ```
 
-  <img src="images/selecting_and_rubber_band.gif" alt="Множественное выделение и видимость выделенного прямоугольника" style="zoom:50%;" />
+  <img src="images/show_unlimited_rubber_band.gif" alt="Множественное выделение и видимость выделенного прямоугольника" style="zoom:50%;" />
+
+  Можно ограничить выделенный прямоугольник только областью фонового изображения. Для этого нужно вызвать метод:
+
+  ```python
+  scene.limit_rubber_band_size_to_background(True)
+  ```
+
+  <img src="images/show_limited_rubber_band.gif" alt="Множественное выделение и видимость выделенного прямоугольника только на фоне" style="zoom:50%;" />
 
   Чтобы вернуться к обычному режиму, при котором выделенный прямоугольник исчезает после освобождения правой кнопки мышки, нужно вызвать метод:
 
