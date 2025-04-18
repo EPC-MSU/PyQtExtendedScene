@@ -1,8 +1,9 @@
 import logging
 
 
-def set_logger(level: int = logging.INFO) -> None:
+def set_logger(name: str, level: int = logging.INFO) -> None:
     """
+    :param name: logger name;
     :param level: logging level.
     """
 
@@ -11,7 +12,7 @@ def set_logger(level: int = logging.INFO) -> None:
     stream_handler.setFormatter(formatter)
     stream_handler.setLevel(level)
 
-    logger = logging.getLogger("pyqtextendedscene")
+    logger = logging.getLogger(name)
     logger.addHandler(stream_handler)
     logger.setLevel(level)
     logger.propagate = False

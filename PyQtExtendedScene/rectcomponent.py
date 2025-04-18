@@ -84,12 +84,13 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
     Z_VALUE: float = 1
 
     def __init__(self, rect: Optional[QRectF] = None, pen: Optional[QPen] = None, brush: Optional[QBrush] = None,
-                 update_pen_for_selection: Optional[Callable[[], QPen]] = None, draggable: bool = True,
-                 selectable: bool = True, unique_selection: bool = False) -> None:
+                 scale: Optional[float] = None, update_pen_for_selection: Optional[Callable[[], QPen]] = None,
+                 draggable: bool = True, selectable: bool = True, unique_selection: bool = False) -> None:
         """
         :param rect: rect for component;
         :param pen: pen for component;
         :param brush: brush for component;
+        :param scale: scale factor;
         :param update_pen_for_selection: a function that returns a pen to paint a component when the component is
         selected;
         :param draggable: True if component can be dragged;
@@ -99,7 +100,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         """
 
         QGraphicsRectItem.__init__(self)
-        BaseComponent.__init__(self, pen, brush, draggable, selectable, unique_selection)
+        BaseComponent.__init__(self, pen, brush, scale, draggable, selectable, unique_selection)
 
         self._mode: RectComponent.Mode = RectComponent.Mode.NO_ACTION
         self._update_pen_for_selection: Optional[Callable[[], QPen]] = (update_pen_for_selection or
@@ -108,7 +109,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self._y_fixed: Optional[float] = None
 
         self.setBrush(self._brush)
-        self.setPen(self._pen)
+        self._update_pen_width(self._pen)
         self.setZValue(self.Z_VALUE)
         if rect is not None:
             self.setRect(rect)
@@ -120,7 +121,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         :return: class instance.
         """
 
-        pen = ut.create_cosmetic_pen(QColor(data["pen_color"]), data["pen_width"])
+        pen = ut.create_pen(QColor(data["pen_color"]), data["pen_width"])
         brush = QBrush(QColor(data["brush_color"]), data["brush_style"])
         component = RectComponent(QRectF(*data["rect"]), pen, brush, draggable=data["draggable"],
                                   selectable=data["selectable"], unique_selection=data["unique_selection"])
@@ -284,7 +285,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         :return: copied component and its current position.
         """
 
-        component = RectComponent(QRectF(self.rect()), QPen(self._pen), QBrush(self._brush),
+        component = RectComponent(QRectF(self.rect()), QPen(self._pen), QBrush(self._brush), self._scale_factor,
                                   self._update_pen_for_selection, self._draggable, self._selectable,
                                   self._unique_selection)
         return component, self.scenePos()
@@ -390,18 +391,18 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self._pen = pen or self._pen
 
         self.setBrush(self._brush)
-        self.setPen(self._pen)
+        self._update_pen_width(self._pen)
 
     def update_selection(self) -> None:
         if not self._editable or self._scene_mode is SceneMode.NORMAL:
             if self.is_selected():
                 pen = self._pen if self._update_pen_for_selection is None else self._update_pen_for_selection()
-                self.setPen(pen)
+                self._update_pen_width(pen)
             elif self.pen() != self._pen:
-                self.setPen(QPen(self._pen))
+                self._update_pen_width(self._pen)
         else:
             if self.is_selected():
                 pen = ut.get_function_to_update_dashed_pen(self._pen_to_edit)()
-                self.setPen(pen)
+                self._update_pen_width(pen)
             elif self.pen() != self._pen_to_edit:
-                self.setPen(self._pen_to_edit)
+                self._update_pen_width(self._pen_to_edit)

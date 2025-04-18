@@ -27,12 +27,13 @@ class ExtendedScene(QGraphicsView):
     """
 
     PEN_COLOR_TO_EDIT: QColor = QColor("#007FFF")
-    PEN_WIDTH_TO_EDIT: float = 3
+    PEN_WIDTH_TO_EDIT: float = 1
     MIME_TYPE: str = "PyQtExtendedScene_MIME"
-    MIN_SCALE: float = 0.1
     POINT_INCREASE_FACTOR: float = 2
-    POINT_RADIUS: float = 4
+    POINT_RADIUS: float = 2
     UPDATE_INTERVAL_MS: int = 10  # msec
+    UPDATE_ZOOM_THRESHOLD: float = 1e-3
+    ZOOM_FACTOR: float = 1.25
     component_deleted: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_moved: pyqtSignal = pyqtSignal(QGraphicsItem)
     component_pasted: pyqtSignal = pyqtSignal(QGraphicsItem)
@@ -81,10 +82,10 @@ class ExtendedScene(QGraphicsView):
         self._mouse_pos: QPointF = QPointF()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: List[BaseComponent] = []
-        self._pen_to_edit: QPen = ut.create_cosmetic_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
+        self._pen_to_edit: QPen = ut.create_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
         self._point_increase_factor: float = self.POINT_INCREASE_FACTOR
         self._point_radius: float = self.POINT_RADIUS
-        self._scale: float = 1.0
+        self._scale: float = self._get_physical_scale_factor()
         self._scene_mode: SceneMode = SceneMode.NORMAL
         self._shift_pressed: bool = False
         self._zoom_speed: float = zoom_speed
@@ -99,10 +100,6 @@ class ExtendedScene(QGraphicsView):
         self._set_view_params()
         self._create_shortcuts()
         self._create_scale_sending_timer()
-
-    @pyqtSlot()
-    def _send_scale(self) -> None:
-        self.scale_changed.emit(self._scale)
 
     @property
     def background(self) -> Optional[QGraphicsPixmapItem]:
@@ -136,7 +133,8 @@ class ExtendedScene(QGraphicsView):
         return group
 
     def _add_rubber_band(self) -> None:
-        self._rubber_band: RubberBand = RubberBand()
+        self._rubber_band: RubberBand = RubberBand(scale=self._scale)
+        self.scale_changed.connect(self._rubber_band.update_scale)
         self._animation_timer.timeout.connect(self._rubber_band.update_selection)
         self.scene().addItem(self._rubber_band)
 
@@ -157,11 +155,11 @@ class ExtendedScene(QGraphicsView):
         """
 
         if isinstance(component, BaseComponent):
-            self.scale_changed.connect(component.update_scale)
             component.allow_drag(self._drag_allowed)
             component.set_scene_mode(self._scene_mode)
-            self.scene_mode_changed.connect(component.set_scene_mode)
             component.selection_signal.connect(self._handle_component_selection_changed)
+            self.scale_changed.connect(component.update_scale)
+            self.scene_mode_changed.connect(component.set_scene_mode)
 
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.connect(component.update_selection)
@@ -194,6 +192,7 @@ class ExtendedScene(QGraphicsView):
             shortcut.activated.connect(self._combination_and_slots[combination])
 
     def _finish_create_point_component_by_mouse(self) -> None:
+        self.scale_changed.disconnect(self._current_component.update_scale)
         self._current_component.setSelected(False)
         self.scene().removeItem(self._current_component)
         modified_component = self._modify_component_to_add_to_scene(self._current_component)
@@ -205,6 +204,7 @@ class ExtendedScene(QGraphicsView):
         self._operation = ExtendedScene.Operation.NO_ACTION
 
     def _finish_create_rect_component_by_mouse(self) -> None:
+        self.scale_changed.disconnect(self._current_component.update_scale)
         self.scene().removeItem(self._current_component)
         if self._current_component.check_big_enough():
             self._current_component.fix_mode(RectComponent.Mode.NO_ACTION)
@@ -228,14 +228,38 @@ class ExtendedScene(QGraphicsView):
 
         return None
 
+    def _get_max_zoom_factor(self) -> float:
+        """
+        :return: maximum magnification factor.
+        """
+
+        return ut.get_max_zoom_factor(self)
+
+    def _get_min_zoom_factor(self) -> float:
+        """
+        :return: minimum magnification factor.
+        """
+
+        return 0.8
+
+    def _get_physical_scale_factor(self) -> float:
+        """
+        :return: view physical scale factor (preserve size in millimeters).
+        """
+
+        length = 100.0
+        return ut.map_length_to_scene(self, length) * self.physicalDpiX() / (25.4 * length)
+
     def _get_zoom_factor(self, event: QWheelEvent) -> float:
         """
         :param event: wheel event.
         :return: zoom factor.
         """
 
-        zoom_factor = 1.0
-        zoom_factor += event.angleDelta().y() * self._zoom_speed
+        if event.angleDelta().y() > 0:
+            zoom_factor = min(self.ZOOM_FACTOR, self._get_max_zoom_factor())
+        else:
+            zoom_factor = max(1.0 / self.ZOOM_FACTOR, self._get_min_zoom_factor())
         return zoom_factor
 
     def _handle_component_creation_by_mouse(self) -> None:
@@ -513,6 +537,10 @@ class ExtendedScene(QGraphicsView):
         if self.contextMenuPolicy() == Qt.CustomContextMenu:
             self.custom_context_menu_requested.emit(pos)
 
+    @pyqtSlot()
+    def _send_scale(self) -> None:
+        self.scale_changed.emit(self._scale)
+
     def _set_background(self, background: Optional[QPixmap] = None) -> None:
         """
         :param background: pixmap background for scene.
@@ -603,6 +631,7 @@ class ExtendedScene(QGraphicsView):
         self._current_component = PointComponent(self._point_radius, scale=self._scale,
                                                  increase_factor=self._point_increase_factor)
         self._current_component.setPos(pos)
+        self.scale_changed.connect(self._current_component.update_scale)
         self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)
         self._operation = ExtendedScene.Operation.CREATE_COMPONENT
@@ -615,8 +644,9 @@ class ExtendedScene(QGraphicsView):
         if self._current_component:
             self.scene().removeItem(self._current_component)
 
-        self._current_component = RectComponent(QRectF(QPointF(0, 0), QPointF(0, 0)))
+        self._current_component = RectComponent(QRectF(QPointF(0, 0), QPointF(0, 0)), scale=self._scale)
         self._current_component.setPos(pos)
+        self.scale_changed.connect(self._current_component.update_scale)
         self._current_component.fix_mode(RectComponent.Mode.RESIZE_ANY)
         self._current_component.set_editable(True, self._pen_to_edit)
         self.scene().addItem(self._current_component)
@@ -842,21 +872,6 @@ class ExtendedScene(QGraphicsView):
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.disconnect(component.update_selection)
 
-    def scale_to_window_size(self, size: QSize) -> None:
-        """
-        Scale to window size.
-        For example, if you have window 600x600 and workspace background image 1200x1200, image will be scaled in 4x.
-        :param size: window size.
-        """
-
-        if self.background:
-            factor_x = size.width() / self.background.pixmap().width()
-            factor_y = size.height() / self.background.pixmap().height()
-            factor = max(min(factor_x, factor_y), ExtendedScene.MIN_SCALE)
-            self.resetTransform()
-            self._scale = factor
-            self.zoom(factor, QPoint(0, 0))
-
     def set_background(self, background: QPixmap) -> None:
         """
         :param background: new pixmap background for scene.
@@ -923,12 +938,10 @@ class ExtendedScene(QGraphicsView):
         """
 
         zoom_factor = self._get_zoom_factor(event)
-        if self._scale * zoom_factor < ExtendedScene.MIN_SCALE and zoom_factor < 1.0:  # minimum allowed zoom
-            return
-
-        self.zoom(zoom_factor, event.pos())
-        self._scale *= zoom_factor
-        self.scale_changed.emit(self._scale)
+        if abs(zoom_factor - 1) > self.UPDATE_ZOOM_THRESHOLD:
+            self.zoom(zoom_factor, event.pos())
+            self._scale = self._get_physical_scale_factor()
+            self._send_scale()
 
     def zoom(self, zoom_factor: float, pos: QPoint) -> None:  # pos in view coordinates
         """

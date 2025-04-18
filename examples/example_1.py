@@ -14,7 +14,7 @@ except ImportError:
 # Let's describe our own component
 class MyComponent(PointComponent):
 
-    NORMAL_SIZE: float = 10
+    NORMAL_SIZE: float = 5
 
     def __init__(self, x: float, y: float, description: str = "") -> None:
         """
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Open workspace background image
-    path_to_image = os.path.join("images", "workspace.png")
+    path_to_image = os.path.join("examples", "images", "workspace.png")
     image = QPixmap(path_to_image)
     image = image.scaled(800, 600)
     # Create workspace

@@ -12,7 +12,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
     """
 
     INCREASE_FACTOR: float = 2
-    RADIUS: float = 4
+    RADIUS: float = 2
     Z_VALUE: float = 2
 
     def __init__(self, radius: Optional[float] = None, pen: Optional[QPen] = None, brush: Optional[QBrush] = None,
@@ -31,11 +31,10 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         QGraphicsEllipseItem.__init__(self)
-        BaseComponent.__init__(self, pen, brush, draggable, selectable, unique_selection)
+        BaseComponent.__init__(self, pen, brush, scale, draggable, selectable, unique_selection)
 
         self._increase_factor: float = increase_factor or self.INCREASE_FACTOR
         self._r: float = radius or self.RADIUS
-        self._scale_factor: float = scale or 1
 
         self.setZValue(self.Z_VALUE)
         self.set_parameters()
@@ -47,7 +46,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         :return: class instance.
         """
 
-        pen = ut.create_cosmetic_pen(QColor(data["pen_color"]), data["pen_width"])
+        pen = ut.create_pen(QColor(data["pen_color"]), data["pen_width"])
         brush = QBrush(QColor(data["brush_color"]), data["brush_style"])
         component = PointComponent(data["radius"], pen, brush, increase_factor=data["increase_factor"],
                                    draggable=data["draggable"], selectable=data["selectable"],
@@ -60,7 +59,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         """
 
         if radius is not None:
-            radius /= self._scale_factor
+            radius *= self._scale_factor
             self.setRect(-radius, -radius, 2 * radius, 2 * radius)
 
     def convert_to_json(self) -> Dict[str, Any]:
@@ -117,7 +116,7 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         self._r = radius or self._r
 
         self.setBrush(QBrush() if self._editable else self._brush)
-        self.setPen(self._pen_to_edit if self._editable else self._pen)
+        self._update_pen_width(self._pen_to_edit if self._editable else self._pen)
         self._set_rect(self._r)
 
     def update_scale(self, scale_factor: float) -> None:

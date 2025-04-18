@@ -1,11 +1,16 @@
+import math
 import sys
 import time
 from typing import Any, Callable, List, Optional
-from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtCore import QPoint, QPointF, QRectF, QSizeF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPen
+from PyQt5.QtWidgets import QGraphicsView
 
 
-def create_cosmetic_pen(color: QColor, width: float) -> QPen:
+MIN_DIMENSION: float = 64
+
+
+def create_pen(color: QColor, width: float) -> QPen:
     """
     :param color: pen color;
     :param width: pen width.
@@ -13,7 +18,6 @@ def create_cosmetic_pen(color: QColor, width: float) -> QPen:
     """
 
     pen = QPen(QBrush(color), width)
-    pen.setCosmetic(True)
     return pen
 
 
@@ -80,6 +84,46 @@ def get_left_top_pos(points: List[QPointF]) -> QPointF:
         if top is None or top > y:
             top = y
     return QPointF(left, top)
+
+
+def get_max_zoom_factor(view: QGraphicsView) -> float:
+    """
+    :param view: view.
+    :return: maximum magnification factor.
+    """
+
+    disp_height = map_length_to_scene(view, view.viewport().height())
+    disp_width = map_length_to_scene(view, view.viewport().width())
+    return min(disp_height, disp_width) / MIN_DIMENSION
+
+
+def get_min_zoom_factor(view: QGraphicsView, image_size: QSizeF) -> float:
+    """
+    :param view: view;
+    :param image_size: background image size.
+    :return: minimum magnification factor.
+    """
+
+    image_height = image_size.height()
+    image_width = image_size.width()
+    disp_height = map_length_to_scene(view, view.viewport().height())
+    disp_width = map_length_to_scene(view, view.viewport().width())
+    if disp_height > 0 and disp_width > 0 and image_height > 0 and image_width > 0:
+        return min(disp_height / image_height, disp_width / image_width)
+
+    return 1.0
+
+
+def map_length_to_scene(view: QGraphicsView, length: float) -> float:
+    """
+    :param view: view whose scene you need to relate the length to;
+    :param length: length.
+    :return: length on scene.
+    """
+
+    point_1, point_2 = QPoint(0, 0), QPoint(0, length)
+    scene_point1, scene_point2 = view.mapToScene(point_1), view.mapToScene(point_2)
+    return math.sqrt((scene_point2.x() - scene_point1.x()) ** 2 + (scene_point2.y() - scene_point1.y()) ** 2)
 
 
 def send_edited_components_changed_signal(func):
