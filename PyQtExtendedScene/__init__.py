@@ -10,4 +10,4 @@ from .scenemode import SceneMode
 
 __all__ = ["BaseComponent", "ComponentGroup", "DrawingMode", "ExtendedScene", "PointComponent", "RectComponent",
            "SceneMode"]
-set_logger()
+set_logger("pyqtextendedscene")

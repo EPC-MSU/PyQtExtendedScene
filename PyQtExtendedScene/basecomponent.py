@@ -101,7 +101,7 @@ class BaseComponent:
     def _update_pen_width(self, pen: QPen, initial_pen_width: Optional[float] = None) -> None:
         """
         :param pen: pen that needs to be set and the width of which needs to be adjusted to scale;
-        :param initial_pen_width: pen width at scale 1.
+        :param initial_pen_width: initial pen width.
         """
 
         initial_pen_width = initial_pen_width or pen.widthF()
@@ -221,4 +221,4 @@ class BaseComponent:
 
         self._scale_factor = scale_factor
         if hasattr(self, "setPen"):
-            self._update_pen_width(self.pen(), self._pen.widthF())
+            self._update_pen_width(self.pen(), self._pen_to_edit.widthF() if self._editable else self._pen.widthF())

@@ -2,7 +2,7 @@ import math
 import sys
 import time
 from typing import Any, Callable, List, Optional
-from PyQt5.QtCore import QPoint, QPointF, QRectF, Qt
+from PyQt5.QtCore import QPoint, QPointF, QRectF, QSizeF, Qt
 from PyQt5.QtGui import QBrush, QColor, QPen
 from PyQt5.QtWidgets import QGraphicsView
 
@@ -95,6 +95,23 @@ def get_max_zoom_factor(view: QGraphicsView) -> float:
     disp_height = map_length_to_scene(view, view.viewport().height())
     disp_width = map_length_to_scene(view, view.viewport().width())
     return min(disp_height, disp_width) / MIN_DIMENSION
+
+
+def get_min_zoom_factor(view: QGraphicsView, image_size: QSizeF) -> float:
+    """
+    :param view: view;
+    :param image_size: background image size.
+    :return: minimum magnification factor.
+    """
+
+    image_height = image_size.height()
+    image_width = image_size.width()
+    disp_height = map_length_to_scene(view, view.viewport().height())
+    disp_width = map_length_to_scene(view, view.viewport().width())
+    if disp_height > 0 and disp_width > 0 and image_height > 0 and image_width > 0:
+        return min(disp_height / image_height, disp_width / image_width)
+
+    return 1.0
 
 
 def map_length_to_scene(view: QGraphicsView, length: float) -> float:
