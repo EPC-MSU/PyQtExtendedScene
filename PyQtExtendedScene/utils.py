@@ -48,6 +48,16 @@ def get_class_by_name(class_name: str) -> Optional[type]:
     return None
 
 
+def get_distance_between_points(point_1: QPoint, point_2: QPoint) -> float:
+    """
+    :param point_1: first point;
+    :param point_2: second point.
+    :return: distance between points.
+    """
+
+    return math.sqrt((point_2.x() - point_1.x()) ** 2 + (point_2.y() - point_1.y()) ** 2)
+
+
 def get_function_to_update_dashed_pen(pen: QPen, update_interval: float = 0.4) -> Callable[[], QPen]:
     """
     :param pen: pen;
@@ -122,8 +132,8 @@ def map_length_to_scene(view: QGraphicsView, length: float) -> float:
     """
 
     point_1, point_2 = QPoint(0, 0), QPoint(0, length)
-    scene_point1, scene_point2 = view.mapToScene(point_1), view.mapToScene(point_2)
-    return math.sqrt((scene_point2.x() - scene_point1.x()) ** 2 + (scene_point2.y() - scene_point1.y()) ** 2)
+    scene_point_1, scene_point_2 = view.mapToScene(point_1), view.mapToScene(point_2)
+    return get_distance_between_points(scene_point_1, scene_point_2)
 
 
 def send_edited_components_changed_signal(func):
