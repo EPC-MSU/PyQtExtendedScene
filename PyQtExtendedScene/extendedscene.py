@@ -81,9 +81,11 @@ class ExtendedScene(QGraphicsView):
         self._drawing_mode: DrawingMode = DrawingMode.EVERYWHERE
         self._edited_components: List[QGraphicsItem] = []
         self._edited_group: Optional[ComponentGroup] = None
-        self._mouse_click_pos: QPoint = QPoint()
-        self._mouse_moved: bool = False
+        self._mouse_left_click_pos: QPoint = QPoint()
+        self._mouse_moved_after_left_click: bool = False
+        self._mouse_moved_after_right_click: bool = False
         self._mouse_pos: QPointF = QPointF()
+        self._mouse_right_click_pos: QPoint = QPoint()
         self._operation: ExtendedScene.Operation = ExtendedScene.Operation.NO_ACTION
         self._pasted_components: List[BaseComponent] = []
         self._pen_to_edit: QPen = ut.create_pen(self.PEN_COLOR_TO_EDIT, self.PEN_WIDTH_TO_EDIT)
@@ -196,8 +198,11 @@ class ExtendedScene(QGraphicsView):
         :param new_pos: new mouse position.
         """
 
-        if ut.get_distance_between_points(self._mouse_click_pos, new_pos) > self.MOUSE_MOVEMENT_THRESHOLD_PX:
-            self._mouse_moved = True
+        if ut.get_distance_between_points(self._mouse_left_click_pos, new_pos) > self.MOUSE_MOVEMENT_THRESHOLD_PX:
+            self._mouse_moved_after_left_click = True
+
+        if ut.get_distance_between_points(self._mouse_right_click_pos, new_pos) > self.MOUSE_MOVEMENT_THRESHOLD_PX:
+            self._mouse_moved_after_right_click = True
 
     def _enable_shortcuts(self) -> None:
         for combination, shortcut in self._shortcuts.items():
@@ -346,8 +351,8 @@ class ExtendedScene(QGraphicsView):
         :param pos: mouse position.
         """
 
-        self._mouse_click_pos = event.pos()
-        self._mouse_moved = False
+        self._mouse_left_click_pos = event.pos()
+        self._mouse_moved_after_left_click = False
 
         self._rubber_band.hide()
         self.left_clicked.emit(pos)
@@ -373,7 +378,7 @@ class ExtendedScene(QGraphicsView):
         :param pos: mouse position.
         """
 
-        if not self._mouse_moved:
+        if not self._mouse_moved_after_left_click:
             self.left_clicked_and_released.emit(pos)
 
         if self._operation is ExtendedScene.Operation.DRAG_COMPONENT:
@@ -390,11 +395,15 @@ class ExtendedScene(QGraphicsView):
 
         self.middle_clicked.emit(pos)
 
-    def _handle_mouse_right_button_press(self, item: QGraphicsItem, pos: QPointF) -> None:
+    def _handle_mouse_right_button_press(self, item: QGraphicsItem, event: QMouseEvent, pos: QPointF) -> None:
         """
         :param item: component clicked by mouse;
+        :param event: mouse event;
         :param pos: mouse position.
         """
+
+        self._mouse_right_click_pos = event.pos()
+        self._mouse_moved_after_right_click = False
 
         self.right_clicked.emit(pos)
         if item:
@@ -424,6 +433,9 @@ class ExtendedScene(QGraphicsView):
                 self._finish_create_point_component_by_mouse()
             elif isinstance(self._current_component, RectComponent):
                 self._finish_create_rect_component_by_mouse()
+
+                if not self._mouse_moved_after_right_click:
+                    self._send_custom_context_menu_signal(pos)
 
     def _modify_component_to_add_to_scene(self, component: QGraphicsItem) -> Optional[QGraphicsItem]:
         """
@@ -558,6 +570,7 @@ class ExtendedScene(QGraphicsView):
 
         if self.contextMenuPolicy() == Qt.CustomContextMenu:
             self.custom_context_menu_requested.emit(pos)
+            logger.debug("Signal sent for custom context menu")
 
     @pyqtSlot()
     def _send_scale(self) -> None:
@@ -815,6 +828,8 @@ class ExtendedScene(QGraphicsView):
 
         self._mouse_pos = self.mapToScene(event.pos())
         self.mouse_moved.emit(self._mouse_pos)
+        self._determine_if_mouse_moved(event.pos())
+
         if self._operation is ExtendedScene.Operation.CREATE_COMPONENT:
             self._handle_component_creation_by_mouse()
             event.accept()
@@ -827,9 +842,6 @@ class ExtendedScene(QGraphicsView):
 
         if self._operation is ExtendedScene.Operation.RESIZE_COMPONENT:
             self._handle_component_resize_by_mouse()
-
-        if self._operation is ExtendedScene.Operation.DRAG:
-            self._determine_if_mouse_moved(event.pos())
 
         super().mouseMoveEvent(event)
 
@@ -845,7 +857,7 @@ class ExtendedScene(QGraphicsView):
         elif event.button() == Qt.MiddleButton:
             self._handle_mouse_middle_button_press(pos)
         elif event.button() == Qt.RightButton:
-            self._handle_mouse_right_button_press(item, pos)
+            self._handle_mouse_right_button_press(item, event, pos)
             event.accept()
             return
 
