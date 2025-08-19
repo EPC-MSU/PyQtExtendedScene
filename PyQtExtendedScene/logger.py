@@ -7,7 +7,7 @@ def set_logger(name: str, level: int = logging.INFO) -> None:
     :param level: logging level.
     """
 
-    formatter = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")
+    formatter = logging.Formatter("[%(asctime)s %(levelname)s][%(name)s] %(message)s")
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     stream_handler.setLevel(level)
