@@ -7,9 +7,11 @@ from PyQt5.QtWidgets import QApplication, QDialog, QHBoxLayout, QRadioButton, QV
 
 try:
     from PyQtExtendedScene import ExtendedScene, RectComponent, SceneMode
+    from PyQtExtendedScene.utils import install_ru_translator
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from PyQtExtendedScene import ExtendedScene, RectComponent, SceneMode
+    from PyQtExtendedScene.utils import install_ru_translator
 
 
 class Dialog(QDialog):
@@ -24,6 +26,7 @@ class Dialog(QDialog):
     @staticmethod
     def _create_extended_scene() -> ExtendedScene:
         widget = ExtendedScene()
+        widget.enable_default_context_menu()
         widget.setBackgroundBrush(QBrush(QColor("white")))
         widget.scene().setSceneRect(QRectF(-50 * 50, -50 * 50, 2 * 50 * 50, 2 * 50 * 50))
         return widget
@@ -76,6 +79,7 @@ class Dialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    install_ru_translator(app)
     dialog = Dialog()
     dialog.show()
     sys.exit(app.exec_())

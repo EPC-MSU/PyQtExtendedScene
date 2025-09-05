@@ -1,13 +1,14 @@
 import json
 import logging
+import os
 from enum import auto, Enum
 from typing import Any, Dict, List, Optional
 from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeData, QPoint, QPointF, QRect, QRectF,
                           QSize, QSizeF, Qt, QTimer)
-from PyQt5.QtGui import (QBrush, QColor, QEnterEvent, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPainterPath,
-                         QPen, QPixmap, QWheelEvent)
-from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QRubberBand,
-                             QShortcut)
+from PyQt5.QtGui import (QBrush, QColor, QEnterEvent, QIcon, QKeyEvent, QKeySequence, QMouseEvent, QPainter,
+                         QPainterPath, QPen, QPixmap, QWheelEvent)
+from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QMenu,
+                             QRubberBand, QShortcut)
 from . import utils as ut
 from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
@@ -174,6 +175,15 @@ class ExtendedScene(QGraphicsView):
 
         self._scale_sending_timer.start()
         logger.debug("Signals are connected to %s", component)
+
+    @pyqtSlot(QPointF)
+    def _create_point_from_context_menu(self, pos: QPointF) -> None:
+        """
+        :param pos: coordinate where to create a point from the context menu.
+        """
+
+        self._start_create_point_component_by_mouse(pos)
+        self._finish_create_point_component_by_mouse()
 
     def _create_scale_sending_timer(self) -> None:
         self._scale_sending_timer: QTimer = QTimer()
@@ -743,6 +753,12 @@ class ExtendedScene(QGraphicsView):
             except TypeError:
                 ...
 
+    def enable_default_context_menu(self) -> None:
+        if self.contextMenuPolicy() is not Qt.CustomContextMenu:
+            self.setContextMenuPolicy(Qt.CustomContextMenu)
+
+        self.custom_context_menu_requested.connect(self.show_default_context_menu)
+
     def enable_shortcuts(self) -> None:
         self.disable_shortcuts()
         self._enable_shortcuts()
@@ -961,6 +977,28 @@ class ExtendedScene(QGraphicsView):
             self._edited_components = []
 
         self._set_editable_status_for_components()
+
+    def show_context_menu_to_create_pin(self, pos: QPoint) -> None:
+        """
+        :param pos: position in which to show the context menu for creating a pin in edit mode.
+        """
+
+        menu = QMenu()
+        create_pin_action = menu.addAction(qApp.translate("pyqtextendedscene", "Add point\tShift+Right-click"))
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "add_point.png")
+        create_pin_action.setIcon(QIcon(icon_path))
+        point = self.mapToScene(pos)
+        create_pin_action.triggered.connect(lambda: self._create_point_from_context_menu(point))
+        menu.exec(self.mapToGlobal(pos))
+
+    @pyqtSlot(QPoint)
+    def show_default_context_menu(self, pos: QPoint) -> None:
+        """
+        :param pos: position in which to show the context menu.
+        """
+
+        if self._scene_mode is not SceneMode.NORMAL:
+            self.show_context_menu_to_create_pin(pos)
 
     def show_rubber_band_after_mouse_release(self) -> None:
         """

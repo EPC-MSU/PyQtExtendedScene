@@ -6,10 +6,12 @@ from PyQt5.QtWidgets import QDialog, QApplication, QHBoxLayout, QRadioButton, QV
 
 
 try:
-    from PyQtExtendedScene import ComponentGroup, DrawingMode, ExtendedScene, PointComponent, RectComponent, SceneMode
+    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent, SceneMode
+    from PyQtExtendedScene.utils import install_ru_translator
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from PyQtExtendedScene import ComponentGroup, DrawingMode, ExtendedScene, PointComponent, RectComponent, SceneMode
+    from PyQtExtendedScene import ComponentGroup, ExtendedScene, PointComponent, RectComponent, SceneMode
+    from PyQtExtendedScene.utils import install_ru_translator
 
 
 class Dialog(QDialog):
@@ -29,8 +31,8 @@ class Dialog(QDialog):
             image = None
 
         widget = ExtendedScene(image)
+        widget.enable_default_context_menu()
         widget.show_rubber_band_after_mouse_release()
-        widget.set_drawing_mode(DrawingMode.ONLY_IN_BACKGROUND)
         widget.setBackgroundBrush(QBrush(QColor("white")))
 
         point_component = PointComponent(2, brush=QBrush(QColor("red")), draggable=False, selectable=True)
@@ -96,6 +98,7 @@ class Dialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    install_ru_translator(app)
     dialog = Dialog()
     dialog.show()
     sys.exit(app.exec_())

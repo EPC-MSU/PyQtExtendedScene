@@ -1,12 +1,15 @@
+import logging
 import math
+import os
 import sys
 import time
 from typing import Any, Callable, List, Optional
-from PyQt5.QtCore import QPoint, QPointF, QRectF, QSizeF, Qt
+from PyQt5.QtCore import QPoint, QPointF, QRectF, QSizeF, Qt, QTranslator
 from PyQt5.QtGui import QBrush, QColor, QPen
-from PyQt5.QtWidgets import QGraphicsView
+from PyQt5.QtWidgets import QApplication, QGraphicsView
 
 
+logger = logging.getLogger("pyqtextendedscene")
 MIN_DIMENSION: float = 64
 
 
@@ -122,6 +125,34 @@ def get_min_zoom_factor(view: QGraphicsView, image_size: QSizeF) -> float:
         return min(disp_height / image_height, disp_width / image_width)
 
     return 1.0
+
+
+def get_ru_translator() -> Optional[QTranslator]:
+    """
+    :return: Russian translator.
+    """
+
+    translator = QTranslator()
+    dir_with_translation = os.path.join(os.path.dirname(os.path.abspath(__file__)), "translation")
+    if translator.load("translation_ru", dir_with_translation):
+        logger.info("Russian translator for pyqtextendedscene is loaded")
+        return translator
+
+    logger.error("Failed to load Russian translator for pyqtextendedscene")
+    return None
+
+
+def install_ru_translator(app: QApplication) -> None:
+    """
+    :param app: the application in which to install Russian translator.
+    """
+
+    translator = get_ru_translator()
+    if translator and app.installTranslator(translator):
+        app.pyqtextendedscene_translator = translator
+        logger.info("Russian translator for pyqtextendedscene is installed")
+    else:
+        logger.error("Failed to install Russian translator for pyqtextendedscene")
 
 
 def map_length_to_scene(view: QGraphicsView, length: float) -> float:
