@@ -8,7 +8,7 @@ from PyQt5.QtCore import (pyqtSignal, pyqtSlot, QCoreApplication as qApp, QMimeD
 from PyQt5.QtGui import (QBrush, QColor, QEnterEvent, QIcon, QKeyEvent, QKeySequence, QMouseEvent, QPainter,
                          QPainterPath, QPen, QPixmap, QWheelEvent)
 from PyQt5.QtWidgets import (QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QMenu,
-                             QRubberBand, QShortcut)
+                             QRubberBand, QShortcut, QAction)
 from . import utils as ut
 from .basecomponent import BaseComponent
 from .componentgroup import ComponentGroup
@@ -175,6 +175,31 @@ class ExtendedScene(QGraphicsView):
 
         self._scale_sending_timer.start()
         logger.debug("Signals are connected to %s", component)
+
+    def _create_context_menu_action_to_create_pin(self, pos: QPoint) -> QAction:
+        """
+        :param pos: position in which to create a pin.
+        :return: context menu action to create a pin.
+        """
+
+        create_pin_action = QAction(qApp.translate("pyqtextendedscene", "Add point\tShift+Right-click"))
+        icon_path = os.path.join(ut.DIR_PATH, "images", "add_point.png")
+        create_pin_action.setIcon(QIcon(icon_path))
+        point = self.mapToScene(pos)
+        create_pin_action.triggered.connect(lambda: self._create_point_from_context_menu(point))
+        return create_pin_action
+
+    def _create_context_menu_action_to_rotate_selected_components(self, components: List[BaseComponent]) -> QAction:
+        """
+        :param components: selected components that need to be rotated clockwise 90 degrees.
+        :return: context menu action to rotate the selected components.
+        """
+
+        rotate_action = QAction(qApp.translate("pyqtextendedscene", "Rotate selected elements 90° clockwise"))
+        icon_path = os.path.join(ut.DIR_PATH, "images", "rotate.png")
+        rotate_action.setIcon(QIcon(icon_path))
+        rotate_action.triggered.connect(lambda: self._rotate_components(components))
+        return rotate_action
 
     @pyqtSlot(QPointF)
     def _create_point_from_context_menu(self, pos: QPointF) -> None:
@@ -559,6 +584,18 @@ class ExtendedScene(QGraphicsView):
             except Exception:
                 logger.debug("Failed to call 'set_editable' method on component %s", component)
 
+    @pyqtSlot(list)
+    def _rotate_components(self, components: List[BaseComponent]) -> None:
+        """
+        :param components: components that need to be rotated clockwise 90 degrees.
+        """
+
+        rect = ut.get_max_rect_for_components(components)
+        for component in components:
+            origin = component.mapFromScene(rect.center())
+            component.setTransformOriginPoint(origin)
+            component.setRotation(90)
+
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
         """
         :param item: component clicked by mouse;
@@ -665,6 +702,26 @@ class ExtendedScene(QGraphicsView):
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
 
+    @pyqtSlot(QPoint)
+    def _show_default_context_menu(self, pos: QPoint) -> None:
+        """
+        :param pos: position in which to show the context menu.
+        """
+
+        menu_actions = []
+        if self._scene_mode is not SceneMode.NORMAL:
+            menu_actions.append(self._create_context_menu_action_to_create_pin(pos))
+        else:
+            selected_components = [item for item in self.scene().selectedItems() if isinstance(item, BaseComponent)]
+            if selected_components:
+                menu_actions.append(self._create_context_menu_action_to_rotate_selected_components(selected_components))
+
+        if menu_actions:
+            menu = QMenu()
+            for action in menu_actions:
+                menu.addAction(action)
+            menu.exec(self.mapToGlobal(pos))
+
     def _start_create_point_component_by_mouse(self, pos: QPointF) -> None:
         """
         :param pos: mouse position.
@@ -757,7 +814,7 @@ class ExtendedScene(QGraphicsView):
         if self.contextMenuPolicy() is not Qt.CustomContextMenu:
             self.setContextMenuPolicy(Qt.CustomContextMenu)
 
-        self.custom_context_menu_requested.connect(self.show_default_context_menu)
+        self.custom_context_menu_requested.connect(self._show_default_context_menu)
 
     def enable_shortcuts(self) -> None:
         self.disable_shortcuts()
@@ -977,28 +1034,6 @@ class ExtendedScene(QGraphicsView):
             self._edited_components = []
 
         self._set_editable_status_for_components()
-
-    def show_context_menu_to_create_pin(self, pos: QPoint) -> None:
-        """
-        :param pos: position in which to show the context menu for creating a pin in edit mode.
-        """
-
-        menu = QMenu()
-        create_pin_action = menu.addAction(qApp.translate("pyqtextendedscene", "Add point\tShift+Right-click"))
-        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "add_point.png")
-        create_pin_action.setIcon(QIcon(icon_path))
-        point = self.mapToScene(pos)
-        create_pin_action.triggered.connect(lambda: self._create_point_from_context_menu(point))
-        menu.exec(self.mapToGlobal(pos))
-
-    @pyqtSlot(QPoint)
-    def show_default_context_menu(self, pos: QPoint) -> None:
-        """
-        :param pos: position in which to show the context menu.
-        """
-
-        if self._scene_mode is not SceneMode.NORMAL:
-            self.show_context_menu_to_create_pin(pos)
 
     def show_rubber_band_after_mouse_release(self) -> None:
         """

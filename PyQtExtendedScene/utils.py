@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QApplication, QGraphicsView
 
 
 logger = logging.getLogger("pyqtextendedscene")
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 MIN_DIMENSION: float = 64
 
 
@@ -99,6 +100,41 @@ def get_left_top_pos(points: List[QPointF]) -> QPointF:
     return QPointF(left, top)
 
 
+def get_max_rect_for_components(components: list) -> QRectF:
+    """
+    :param components:
+    :return:
+    """
+
+    from .componentgroup import ComponentGroup
+    from .pointcomponent import PointComponent
+    from .rectcomponent import RectComponent
+
+    points = []
+    for component in components:
+        if isinstance(component, PointComponent):
+            points.append(component.scenePos())
+        elif isinstance(component, (ComponentGroup, RectComponent)):
+            rect = component.mapRectToScene(component.rect())
+            points.append(rect.topLeft())
+            points.append(rect.bottomRight())
+
+    return get_max_rect_for_points(points)
+
+
+def get_max_rect_for_points(points: List[QPointF]) -> QRectF:
+    """
+    :param points:
+    :return: a rectangle surrounding given points.
+    """
+
+    left = min(point.x() for point in points)
+    right = max(point.x() for point in points)
+    top = min(point.y() for point in points)
+    bottom = max(point.y() for point in points)
+    return QRectF(left, top, right - left, bottom - top)
+
+
 def get_max_zoom_factor(view: QGraphicsView) -> float:
     """
     :param view: view.
@@ -133,7 +169,7 @@ def get_ru_translator() -> Optional[QTranslator]:
     """
 
     translator = QTranslator()
-    dir_with_translation = os.path.join(os.path.dirname(os.path.abspath(__file__)), "translation")
+    dir_with_translation = os.path.join(DIR_PATH, "translation")
     if translator.load("translation_ru", dir_with_translation):
         logger.info("Russian translator for pyqtextendedscene is loaded")
         return translator
