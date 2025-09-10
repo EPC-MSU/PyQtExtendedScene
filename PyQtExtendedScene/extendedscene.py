@@ -595,7 +595,7 @@ class ExtendedScene(QGraphicsView):
         for component in components:
             origin = component.mapFromScene(rect.center())
             component.setTransformOriginPoint(origin)
-            component.setRotation(90)
+            component.setRotation(component.rotation() + 90)
 
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
         """
@@ -714,7 +714,7 @@ class ExtendedScene(QGraphicsView):
             menu_actions.append(self._create_context_menu_action_to_create_pin(pos))
         else:
             selected_components = [item for item in self.scene().selectedItems()
-                                   if isinstance(item, BaseComponent) and item.draggable]
+                                   if isinstance(item, BaseComponent) and item.flags() & QGraphicsItem.ItemIsMovable]
             if selected_components:
                 menu_actions.append(self._create_context_menu_action_to_rotate_selected_components(selected_components))
 
