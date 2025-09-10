@@ -1,7 +1,7 @@
 from enum import auto, Enum
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QTransform
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
                              QStyleOptionGraphicsItem, QWidget)
 from . import utils as ut
@@ -388,6 +388,22 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         bottom = max(rect.bottom(), current_rect_at_scene.bottom())
         self.setRect(QRectF(0, 0, right - left, bottom - top))
         self.setPos(left, top)
+
+    def rotate_clockwise(self, angle: float, center: QPointF) -> None:
+        """
+        :param angle: the angle in degrees by which the item should be rotated clockwise;
+        :param center: the point around which the item needs to be rotated.
+        """
+
+        transform = QTransform()
+        transform.translate(center.x(), center.y())
+        transform.rotate(angle)
+        transform.translate(-center.x(), -center.y())
+
+        rect = self.mapRectToScene(self.rect())
+        rect = transform.mapRect(rect)
+        self.setRect(QRectF(0, 0, rect.width(), rect.height()))
+        self.setPos(rect.topLeft())
 
     def set_parameters(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None) -> None:
         """
