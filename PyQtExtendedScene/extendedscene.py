@@ -593,11 +593,7 @@ class ExtendedScene(QGraphicsView):
 
         rect = ut.get_min_rect_for_components(components)
         for component in components:
-            if isinstance(component, PointComponent):
-                origin = component.mapFromScene(rect.center())
-                component.setTransformOriginPoint(origin)
-                component.setRotation(component.rotation() + 90)
-            elif isinstance(component, RectComponent):
+            if hasattr(component, "rotate_clockwise"):
                 component.rotate_clockwise(90, rect.center())
 
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:

@@ -401,9 +401,9 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         transform.translate(-center.x(), -center.y())
 
         rect = self.mapRectToScene(self.rect())
-        rect = transform.mapRect(rect)
-        self.setRect(QRectF(0, 0, rect.width(), rect.height()))
-        self.setPos(rect.topLeft())
+        rotated_rect = transform.mapRect(rect)
+        self.setRect(QRectF(0, 0, rotated_rect.width(), rotated_rect.height()))
+        self.setPos(rotated_rect.topLeft())
 
     def set_parameters(self, pen: Optional[QPen] = None, brush: Optional[QBrush] = None) -> None:
         """

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QTransform
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QStyle, QStyleOptionGraphicsItem, QWidget
 from . import utils as ut
 from .basecomponent import BaseComponent
@@ -100,6 +100,21 @@ class PointComponent(QGraphicsEllipseItem, BaseComponent):
         if option.state & QStyle.State_Selected:
             option.state &= not QStyle.State_Selected
         super().paint(painter, option, widget)
+
+    def rotate_clockwise(self, angle: float, center: QPointF) -> None:
+        """
+        :param angle: the angle in degrees by which the item should be rotated clockwise;
+        :param center: the point around which the item needs to be rotated.
+        """
+
+        transform = QTransform()
+        transform.translate(center.x(), center.y())
+        transform.rotate(angle)
+        transform.translate(-center.x(), -center.y())
+
+        pos = self.scenePos()
+        rotated_pos = transform.map(pos)
+        self.setPos(rotated_pos)
 
     def set_parameters(self, radius: Optional[float] = None, pen: Optional[QPen] = None, brush: Optional[QBrush] = None,
                        increase_factor: Optional[float] = None) -> None:
