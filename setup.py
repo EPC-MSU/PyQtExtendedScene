@@ -17,6 +17,9 @@ setup(name="PyQtExtendedScene",
       install_requires=[
             "PyQt5>=5.8.2, <=5.15.0",
       ],
+      package_data={"PyQtExtendedScene": ["images/add_point.png",
+                                          "images/rotate.png",
+                                          "translation/translation_ru.qm"]},
       classifiers=[
             "Programming Language :: Python :: 3",
             "License :: OSI Approved :: MIT License",
