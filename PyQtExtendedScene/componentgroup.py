@@ -175,6 +175,24 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
                 elif item.is_selected():
                     item.set_selected_at_group(False)
 
+    def rotate_clockwise(self, angle: float, center: QPointF) -> None:
+        """
+        :param angle: the angle in degrees by which the item should be rotated clockwise;
+        :param center: the point around which the item needs to be rotated.
+        """
+
+        for item in self.childItems():
+            if not hasattr(item, "rotate_clockwise"):
+                return
+
+        child_items = self.childItems()
+        for item in child_items:
+            self.removeFromGroup(item)
+
+        for item in child_items:
+            item.rotate_clockwise(angle, center)
+            self.addToGroup(item)
+
     def set_animation_timer(self, timer: QTimer) -> None:
         """
         :param timer: new timer for animation.
