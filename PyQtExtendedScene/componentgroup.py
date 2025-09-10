@@ -112,6 +112,14 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
                 "components": components_data,
                 "pos": (pos.x(), pos.y())}
 
+    def get_top_left_and_bottom_right_points(self) -> Tuple[QPointF, QPointF]:
+        """
+        :return: points at the top left and bottom right vertices of the rectangle bounding the group component.
+        """
+
+        rect = ut.get_min_rect_for_components(self.childItems())
+        return rect.topLeft(), rect.bottomRight()
+
     def handle_selection(self, selected: bool = True) -> None:
         """
         :param selected: if selected is True and this item is selectable, this item is selected; otherwise, it is

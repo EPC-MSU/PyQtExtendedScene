@@ -590,11 +590,12 @@ class ExtendedScene(QGraphicsView):
         :param components: components that need to be rotated clockwise 90 degrees.
         """
 
-        rect = ut.get_max_rect_for_components(components)
+        rect = ut.get_min_rect_for_components(components)
         for component in components:
             origin = component.mapFromScene(rect.center())
             component.setTransformOriginPoint(origin)
             component.setRotation(90)
+            print("rotate ", component)
 
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
         """

@@ -100,28 +100,6 @@ def get_left_top_pos(points: List[QPointF]) -> QPointF:
     return QPointF(left, top)
 
 
-def get_max_rect_for_components(components: list) -> QRectF:
-    """
-    :param components:
-    :return:
-    """
-
-    from .componentgroup import ComponentGroup
-    from .pointcomponent import PointComponent
-    from .rectcomponent import RectComponent
-
-    points = []
-    for component in components:
-        if isinstance(component, PointComponent):
-            points.append(component.scenePos())
-        elif isinstance(component, (ComponentGroup, RectComponent)):
-            rect = component.mapRectToScene(component.rect())
-            points.append(rect.topLeft())
-            points.append(rect.bottomRight())
-
-    return get_max_rect_for_points(points)
-
-
 def get_max_rect_for_points(points: List[QPointF]) -> QRectF:
     """
     :param points:
@@ -144,6 +122,26 @@ def get_max_zoom_factor(view: QGraphicsView) -> float:
     disp_height = map_length_to_scene(view, view.viewport().height())
     disp_width = map_length_to_scene(view, view.viewport().width())
     return min(disp_height, disp_width) / MIN_DIMENSION
+
+
+def get_min_rect_for_components(components: list) -> QRectF:
+    """
+    :param components: list of components.
+    :return: the smallest rectangle that fits all the components in the list.
+    """
+
+    from .componentgroup import ComponentGroup
+    from .pointcomponent import PointComponent
+    from .rectcomponent import RectComponent
+
+    points = []
+    for component in components:
+        if isinstance(component, PointComponent):
+            points.append(component.scenePos())
+        elif isinstance(component, (ComponentGroup, RectComponent)):
+            points.extend(component.get_top_left_and_bottom_right_points())
+
+    return get_max_rect_for_points(points)
 
 
 def get_min_zoom_factor(view: QGraphicsView, image_size: QSizeF) -> float:

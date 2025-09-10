@@ -315,6 +315,14 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         elif self._mode == RectComponent.Mode.RESIZE_TOP:
             self._x_fixed, self._y_fixed = None, self.pos().y() + self.rect().height()
 
+    def get_top_left_and_bottom_right_points(self) -> Tuple[QPointF, QPointF]:
+        """
+        :return: points at the top left and bottom right vertices of the rectangle.
+        """
+
+        rect = self.mapRectToScene(self.rect())
+        return rect.topLeft(), rect.bottomRight()
+
     def go_to_resize_mode(self) -> None:
         self.setFlag(QGraphicsItem.ItemIsMovable, False)
         self.fix_mode(self._mode)
