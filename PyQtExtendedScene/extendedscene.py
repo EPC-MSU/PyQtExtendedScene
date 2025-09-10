@@ -191,7 +191,8 @@ class ExtendedScene(QGraphicsView):
 
     def _create_context_menu_action_to_rotate_selected_components(self, components: List[BaseComponent]) -> QAction:
         """
-        :param components: selected components that need to be rotated clockwise 90 degrees.
+        :param components: list of selected components that can be moved and that need to be rotated 90 degrees
+        clockwise.
         :return: context menu action to rotate the selected components.
         """
 
@@ -595,7 +596,6 @@ class ExtendedScene(QGraphicsView):
             origin = component.mapFromScene(rect.center())
             component.setTransformOriginPoint(origin)
             component.setRotation(90)
-            print("rotate ", component)
 
     def _select_group_component_with_mouse_left_button_press(self, item: QGraphicsItem, event: QMouseEvent) -> None:
         """
@@ -713,7 +713,8 @@ class ExtendedScene(QGraphicsView):
         if self._scene_mode is not SceneMode.NORMAL:
             menu_actions.append(self._create_context_menu_action_to_create_pin(pos))
         else:
-            selected_components = [item for item in self.scene().selectedItems() if isinstance(item, BaseComponent)]
+            selected_components = [item for item in self.scene().selectedItems()
+                                   if isinstance(item, BaseComponent) and item.draggable]
             if selected_components:
                 menu_actions.append(self._create_context_menu_action_to_rotate_selected_components(selected_components))
 
