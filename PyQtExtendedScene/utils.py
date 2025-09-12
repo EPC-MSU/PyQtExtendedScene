@@ -106,6 +106,9 @@ def get_max_rect_for_points(points: List[QPointF]) -> QRectF:
     :return: a rectangle surrounding given points.
     """
 
+    if not points:
+        return QRectF()
+
     left = min(point.x() for point in points)
     right = max(point.x() for point in points)
     top = min(point.y() for point in points)

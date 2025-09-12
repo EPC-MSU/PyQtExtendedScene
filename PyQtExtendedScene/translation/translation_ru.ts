@@ -8,9 +8,9 @@
         <translation>Добавить точку&#x09;Shift+Right-click</translation>
     </message>
     <message>
-        <location filename="../extendedscene.py" line="199"/>
-        <source>Rotate selected elements 90° clockwise</source>
-        <translation>Повернуть выделенные элементы на 90° по часовой стрелке</translation>
+        <location filename="../extendedscene.py" line="197"/>
+        <source>Rotate selected elements 90° clockwise&#x09;Space</source>
+        <translation>Повернуть выделенные элементы на 90° по часовой стрелке&#x09;Space</translation>
     </message>
 </context>
 </TS>

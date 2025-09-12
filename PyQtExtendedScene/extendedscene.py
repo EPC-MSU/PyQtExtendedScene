@@ -189,17 +189,15 @@ class ExtendedScene(QGraphicsView):
         create_pin_action.triggered.connect(lambda: self._create_point_from_context_menu(point))
         return create_pin_action
 
-    def _create_context_menu_action_to_rotate_selected_components(self, components: List[BaseComponent]) -> QAction:
+    def _create_context_menu_action_to_rotate_selected_components(self) -> QAction:
         """
-        :param components: list of selected components that can be moved and that need to be rotated 90 degrees
-        clockwise.
         :return: context menu action to rotate the selected components.
         """
 
-        rotate_action = QAction(qApp.translate("pyqtextendedscene", "Rotate selected elements 90° clockwise"))
+        rotate_action = QAction(qApp.translate("pyqtextendedscene", "Rotate selected elements 90° clockwise\tSpace"))
         icon_path = os.path.join(ut.DIR_PATH, "images", "rotate.png")
         rotate_action.setIcon(QIcon(icon_path))
-        rotate_action.triggered.connect(lambda: self._rotate_components(components))
+        rotate_action.triggered.connect(self.rotate_selected_components)
         return rotate_action
 
     @pyqtSlot(QPointF)
@@ -221,7 +219,8 @@ class ExtendedScene(QGraphicsView):
         self._combination_and_slots = {Qt.CTRL + Qt.Key_C: self.copy_selected_components,
                                        Qt.CTRL + Qt.Key_X: self.cut_selected_components,
                                        Qt.Key_Delete: self.delete_selected_components,
-                                       Qt.CTRL + Qt.Key_V: self.paste_copied_components}
+                                       Qt.CTRL + Qt.Key_V: self.paste_copied_components,
+                                       Qt.Key_Space: self.rotate_selected_components}
         self._shortcuts: Dict[int, QShortcut] = dict()
         for combination, slot in self._combination_and_slots.items():
             shortcut = QShortcut(QKeySequence(combination), self)
@@ -585,8 +584,8 @@ class ExtendedScene(QGraphicsView):
             except Exception:
                 logger.debug("Failed to call 'set_editable' method on component %s", component)
 
-    @pyqtSlot(list)
-    def _rotate_components(self, components: List[BaseComponent]) -> None:
+    @staticmethod
+    def _rotate_components(components: List[BaseComponent]) -> None:
         """
         :param components: components that need to be rotated clockwise 90 degrees.
         """
@@ -715,7 +714,7 @@ class ExtendedScene(QGraphicsView):
             selected_components = [item for item in self.scene().selectedItems()
                                    if isinstance(item, BaseComponent) and item.flags() & QGraphicsItem.ItemIsMovable]
             if selected_components:
-                menu_actions.append(self._create_context_menu_action_to_rotate_selected_components(selected_components))
+                menu_actions.append(self._create_context_menu_action_to_rotate_selected_components())
 
         if menu_actions:
             menu = QMenu()
@@ -983,6 +982,14 @@ class ExtendedScene(QGraphicsView):
         component.selection_signal.disconnect(self._handle_component_selection_changed)
         if isinstance(component, RectComponent):
             self._animation_timer.timeout.disconnect(component.update_selection)
+
+    def rotate_selected_components(self) -> None:
+        if self._scene_mode is not SceneMode.NORMAL:
+            return
+
+        selected_components = [item for item in self.scene().selectedItems()
+                               if isinstance(item, BaseComponent) and item.flags() & QGraphicsItem.ItemIsMovable]
+        self._rotate_components(selected_components)
 
     def set_background(self, background: QPixmap) -> None:
         """
