@@ -71,6 +71,15 @@
   ```python
   scene.enable_default_context_menu()
   ```
+  
+  По умолчанию в дефолтном контекстном меню будет текст на английском языке. Чтобы дефолтное контекстное меню было на русском языке, вызовете функцию **install_ru_translator**:
+
+  ```python
+  from PyQtExtendedScene.utils import install_ru_translator
+  
+  app = QApplication(sys.argv)
+  install_ru_translator(app)
+  ```
 
 #### Обычный режим
 
