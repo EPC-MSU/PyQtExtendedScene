@@ -15,12 +15,12 @@ setup(name="PyQtExtendedScene",
       license="MIT",
       packages=["PyQtExtendedScene"],
       install_requires=[
-            "PyQt5>=5.8.2, <=5.15.0",
+            "PyQt5",
       ],
       classifiers=[
             "Programming Language :: Python :: 3",
             "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
       ],
-      python_requires=">=3.6, <=3.8.10",
+      python_requires=">=3.6",
       zip_safe=False)
