@@ -1,2 +1,2 @@
-PyQt5
-PyQt5-sip
+PyQt5>=5.8.2, <=5.15.0; python_version=="3.6"
+PyQt5; python_version>"3.6"
