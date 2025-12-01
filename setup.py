@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 with open("README.md", "r") as file:
@@ -13,14 +13,15 @@ setup(name="PyQtExtendedScene",
       author="EPC MSU",
       author_email="mihalin@physlab.ru",
       license="MIT",
-      packages=["PyQtExtendedScene"],
+      packages=find_packages(),
+      python_requires=">=3.6",
       install_requires=[
-            "PyQt5",
+            'PyQt5>=5.8.2, <=5.15.0; python_version=="3.6"',
+            'PyQt5; python_version>"3.6"',
       ],
       classifiers=[
             "Programming Language :: Python :: 3",
             "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
       ],
-      python_requires=">=3.6",
       zip_safe=False)
