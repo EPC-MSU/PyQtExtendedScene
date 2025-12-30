@@ -2,9 +2,9 @@ import os
 import sys
 import unittest
 from typing import List
-from PyQt5.QtCore import QPointF, QRectF
-from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QApplication, QGraphicsEllipseItem
+from PyQt6.QtCore import QPointF, QRectF
+from PyQt6.QtGui import QBrush, QColor, QPixmap
+from PyQt6.QtWidgets import QApplication, QGraphicsEllipseItem
 from PyQtExtendedScene import AbstractComponent, ExtendedScene
 
 

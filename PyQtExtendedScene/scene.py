@@ -1,8 +1,8 @@
 from enum import auto, Enum
 from typing import List, Optional
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt
-from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPixmap, QResizeEvent, QWheelEvent
-from PyQt5.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QWidget
+from PyQt6.QtCore import pyqtSignal, QPoint, QPointF, QRectF, Qt
+from PyQt6.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPixmap, QResizeEvent, QWheelEvent
+from PyQt6.QtWidgets import QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QWidget
 
 
 class AbstractComponent(QGraphicsItem):

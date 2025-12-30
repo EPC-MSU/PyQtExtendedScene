@@ -16,8 +16,7 @@ setup(name="PyQtExtendedScene",
       packages=find_packages(),
       python_requires=">=3.6",
       install_requires=[
-            'PyQt5>=5.8.2, <=5.15.0; python_version=="3.6"',
-            'PyQt5; python_version>"3.6"',
+            "PyQt6",
       ],
       classifiers=[
             "Programming Language :: Python :: 3",

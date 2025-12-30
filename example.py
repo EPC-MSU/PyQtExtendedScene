@@ -1,8 +1,8 @@
 import os
 import sys
-from PyQt5.QtCore import QPointF, QRectF
-from PyQt5.QtGui import QBrush, QColor, QPixmap
-from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
+from PyQt6.QtCore import QPointF, QRectF
+from PyQt6.QtGui import QBrush, QColor, QPixmap
+from PyQt6.QtWidgets import QApplication, QFileDialog, QGraphicsEllipseItem
 from PyQtExtendedScene import AbstractComponent, ExtendedScene
 
 
