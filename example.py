@@ -75,4 +75,4 @@ if __name__ == "__main__":
     widget.on_component_left_click.connect(left_click)
     widget.show()
 
-    sys.exit(app.exec_())
+    app.exec()

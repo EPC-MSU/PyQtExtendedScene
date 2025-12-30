@@ -116,16 +116,16 @@ class ExtendedScene(QGraphicsView):
         self._background: Optional[QGraphicsPixmapItem] = self._scene.addPixmap(background) if background else None
         self.setScene(self._scene)
 
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QBrush(QColor(0, 0, 0)))
-        self.setFrameShape(QFrame.NoFrame)
+        self.setFrameShape(QFrame.Shape.NoFrame)
         # Mouse
         self.setMouseTracking(True)
         # For keyboard events
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def _clicked_item(self, event: QMouseEvent) -> Optional[AbstractComponent]:
         """
@@ -194,7 +194,7 @@ class ExtendedScene(QGraphicsView):
         # Check for clicked pin
         item = self._clicked_item(event)
 
-        if event.button() & Qt.LeftButton:
+        if event.button() & Qt.MouseButton.LeftButton:
             self._start_pos = self.mapToScene(event.pos())
 
             if item:
@@ -212,16 +212,16 @@ class ExtendedScene(QGraphicsView):
 
             # We are in drag board mode now
             self._drag_state = self.DragState.drag
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
-        if event.button() & Qt.RightButton:
+        if event.button() & Qt.MouseButton.RightButton:
             if item:
                 self.on_component_right_click.emit(item)
                 return
 
             self.on_right_click.emit(self.mapToScene(event.pos()))
 
-        if event.button() & Qt.MiddleButton:
+        if event.button() & Qt.MouseButton.MiddleButton:
             self.on_middle_click.emit()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -229,8 +229,8 @@ class ExtendedScene(QGraphicsView):
         :param event: mouse event.
         """
 
-        if event.button() & Qt.LeftButton:
-            self.setDragMode(QGraphicsView.NoDrag)
+        if event.button() & Qt.MouseButton.LeftButton:
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
             if self._drag_state is self.DragState.drag_component:
                 if self._current_component:
@@ -247,7 +247,7 @@ class ExtendedScene(QGraphicsView):
         # - https://bugreports.qt.io/browse/QTBUG-7328
         # - https://stackoverflow.com/questions/14610568/how-to-use-the-qgraphicsviews-translate-function
         anchor = self.transformationAnchor()
-        self.setTransformationAnchor(QGraphicsView.NoAnchor)  # Override transformation anchor
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)  # Override transformation anchor
         self.translate(delta.x(), delta.y())
         self.setTransformationAnchor(anchor)  # Restore old anchor
 
@@ -300,7 +300,13 @@ class ExtendedScene(QGraphicsView):
         if self._scale * zoom_factor < self.minimum_scale and zoom_factor < 1.0:  # minimum allowed zoom
             return
 
-        self.zoom(zoom_factor, event.pos())
+        if hasattr(event, "position"):
+            # To work with PyQt6
+            pos = event.position().toPoint()
+        else:
+            # To work with PyQt5
+            pos = event.pos()
+        self.zoom(zoom_factor, pos)
         self._scale *= zoom_factor
 
         for component in self._components:
@@ -318,7 +324,7 @@ class ExtendedScene(QGraphicsView):
         # - https://bugreports.qt.io/browse/QTBUG-7328
         # - https://stackoverflow.com/questions/14610568/how-to-use-the-qgraphicsviews-translate-function
         anchor = self.transformationAnchor()
-        self.setTransformationAnchor(QGraphicsView.NoAnchor)  # Override transformation anchor
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)  # Override transformation anchor
         self.scale(zoom_factor, zoom_factor)
         delta = self.mapToScene(pos) - old_scene_pos
         self.translate(delta.x(), delta.y())
