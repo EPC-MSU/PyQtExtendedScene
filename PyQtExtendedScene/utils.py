@@ -199,7 +199,7 @@ def map_length_to_scene(view: QGraphicsView, length: float) -> float:
     :return: length on scene.
     """
 
-    point_1, point_2 = QPoint(0, 0), QPoint(0, length)
+    point_1, point_2 = QPoint(0, 0), QPoint(0, int(round(length)))
     scene_point_1, scene_point_2 = view.mapToScene(point_1), view.mapToScene(point_2)
     return get_distance_between_points(scene_point_1, scene_point_2)
 
