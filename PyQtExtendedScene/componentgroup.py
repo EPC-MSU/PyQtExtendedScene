@@ -63,7 +63,7 @@ class ComponentGroup(QGraphicsItemGroup, BaseComponent):
         self.removeFromGroup(component)
         if self.scene():
             self.scene().removeItem(component)
-        logging.debug("%s removed from group %s", component, self)
+        logger.debug("%s removed from group %s", component, self)
 
     def addToGroup(self, component: QGraphicsItem) -> None:
         """

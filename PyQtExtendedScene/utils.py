@@ -172,10 +172,10 @@ def get_ru_translator() -> Optional[QTranslator]:
     translator = QTranslator()
     dir_with_translation = os.path.join(DIR_PATH, "translation")
     if translator.load("translation_ru", dir_with_translation):
-        logger.info("Russian translator for pyqtextendedscene is loaded")
+        logger.info("Russian translation loaded")
         return translator
 
-    logger.error("Failed to load Russian translator for pyqtextendedscene")
+    logger.error("Failed to load Russian translation")
     return None
 
 
@@ -187,9 +187,9 @@ def install_ru_translator(app: QApplication) -> None:
     translator = get_ru_translator()
     if translator and app.installTranslator(translator):
         app.pyqtextendedscene_translator = translator
-        logger.info("Russian translator for pyqtextendedscene is installed")
+        logger.info("Russian translation installed")
     else:
-        logger.error("Failed to install Russian translator for pyqtextendedscene")
+        logger.error("Failed to install Russian translation")
 
 
 def map_length_to_scene(view: QGraphicsView, length: float) -> float:

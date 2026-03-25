@@ -174,7 +174,7 @@ class ExtendedScene(QGraphicsView):
             component.set_animation_timer(self._animation_timer)
 
         self._scale_sending_timer.start()
-        logger.debug("Signals are connected to %s", component)
+        logger.debug("Signals connected to '%s'", component)
 
     def _create_context_menu_action_to_create_pin(self, pos: QPoint) -> QAction:
         """
@@ -582,7 +582,7 @@ class ExtendedScene(QGraphicsView):
             try:
                 component.set_editable(False)
             except Exception:
-                logger.debug("Failed to call 'set_editable' method on component %s", component)
+                logger.debug("Failed to call set_editable for component '%s'", component)
 
     @staticmethod
     def _rotate_components(components: List[BaseComponent]) -> None:
@@ -616,7 +616,7 @@ class ExtendedScene(QGraphicsView):
 
         if self.contextMenuPolicy() == Qt.CustomContextMenu:
             self.custom_context_menu_requested.emit(pos)
-            logger.debug("Signal sent for custom context menu")
+            logger.debug("Custom context menu requested")
 
     @pyqtSlot()
     def _send_scale(self) -> None:
@@ -637,7 +637,7 @@ class ExtendedScene(QGraphicsView):
             try:
                 component.set_editable(True, self._pen_to_edit)
             except Exception:
-                logger.debug("Failed to call 'set_editable' method on component %s", component)
+                logger.debug("Failed to call set_editable for component '%s'", component)
 
     def _set_new_rect_for_rubber_band(self) -> bool:
         """
@@ -762,7 +762,7 @@ class ExtendedScene(QGraphicsView):
         self._components.append(component)
         self.scene().addItem(component)
         self._connect_component_to_signals(component)
-        logger.debug("%s added to the scene", component)
+        logger.debug("Component '%s' added to scene", component)
 
     def allow_drag(self, allow: bool = True) -> None:
         """
