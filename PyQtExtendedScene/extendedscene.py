@@ -268,13 +268,13 @@ class ExtendedScene(QGraphicsView):
         self._current_component = None
         self._operation = ExtendedScene.Operation.NO_ACTION
 
-    def _get_clicked_item(self, event: QMouseEvent) -> Optional[QGraphicsItem]:
+    def _get_clicked_item(self, pos: QPoint) -> Optional[QGraphicsItem]:
         """
-        :param event: mouse event.
-        :return: a component that is located at the point specified by the mouse.
+        :param pos: position in the view.
+        :return: a component that is positioned at a given position on the view.
         """
 
-        for item in self.items(event.pos()):
+        for item in self.items(pos):
             if isinstance(item, BaseComponent) and not isinstance(item, RubberBand):
                 return item.group() if item.group() else item
 
@@ -462,6 +462,9 @@ class ExtendedScene(QGraphicsView):
             self._tmp_rubber_band.hide()
             rubber_band_changed = self._set_new_rect_for_rubber_band()
             if not rubber_band_changed:
+                item = self._get_clicked_item(pos)
+                if item and not self.scene().selectedItems():
+                    item.setSelected(True)
                 self._send_custom_context_menu_signal(pos)
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
@@ -923,7 +926,7 @@ class ExtendedScene(QGraphicsView):
         :param event: mouse event.
         """
 
-        item = self._get_clicked_item(event)
+        item = self._get_clicked_item(event.pos())
         pos = self.mapToScene(event.pos())
         if event.button() == Qt.LeftButton:
             self._handle_mouse_left_button_press(item, event, pos)
