@@ -464,8 +464,15 @@ class ExtendedScene(QGraphicsView):
             if not rubber_band_changed:
                 item = self._get_clicked_item(pos)
                 if item and not self.scene().selectedItems():
+                    return_unselected_state = True
                     item.setSelected(True)
+                else:
+                    return_unselected_state = False
+
                 self._send_custom_context_menu_signal(pos)
+
+                if return_unselected_state:
+                    item.setSelected(False)
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
                 self._finish_create_point_component_by_mouse()
