@@ -18,6 +18,17 @@
 * **scripts** - папка со скриптами для выпуска релиза.
 * **tests** - тесты.
 
+## Настройка уровня логирования
+
+Для управления детализацией логов модуля используйте стандартную библиотеку **logging**. Получите логгер по имени "pyqtextendedscene" и установите нужный уровень:
+
+```python
+import logging
+
+# Установите желаемый уровень (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+logging.getLogger("pyqtextendedscene").setLevel(logging.INFO)
+```
+
 ## Типы компонентов
 
 В **PyQtExtendedScene** есть компоненты следующих типов:
@@ -32,17 +43,6 @@
 * **draggable** - компонент можно перемещать в обычном режиме;
 * **selectable** - компонент можно выбирать в обычном режиме;
 * **unique_selection** - компонент может быть выбран только единолично.
-
-## Настройка уровня логирования
-
-Для управления детализацией логов модуля используйте стандартную библиотеку **logging**. Получите логгер по имени "pyqtextendedscene" и установите нужный уровень:
-
-```python
-import logging
-
-# Установите желаемый уровень (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-logging.getLogger("pyqtextendedscene").setLevel(logging.INFO)
-```
 
 ## Режимы
 
