@@ -239,6 +239,15 @@ class ExtendedScene(QGraphicsView):
         if ut.get_distance_between_points(self._mouse_right_click_pos, new_pos) > self.MOUSE_MOVEMENT_THRESHOLD_PX:
             self._mouse_moved_after_right_click = True
 
+    def _emit_context_menu_signal(self, pos: QPoint) -> None:
+        """
+        :param pos: context menu display position.
+        """
+
+        if self.contextMenuPolicy() == Qt.CustomContextMenu:
+            self.custom_context_menu_requested.emit(pos)
+            logger.debug("Custom context menu requested")
+
     def _enable_shortcuts(self) -> None:
         for combination, shortcut in self._shortcuts.items():
             shortcut.activated.connect(self._combination_and_slots[combination])
@@ -462,17 +471,7 @@ class ExtendedScene(QGraphicsView):
             self._tmp_rubber_band.hide()
             rubber_band_changed = self._set_new_rect_for_rubber_band()
             if not rubber_band_changed:
-                item = self._get_clicked_item(pos)
-                if item and not self.scene().selectedItems():
-                    return_unselected_state = True
-                    item.setSelected(True)
-                else:
-                    return_unselected_state = False
-
-                self._send_custom_context_menu_signal(pos)
-
-                if return_unselected_state:
-                    item.setSelected(False)
+                self.emit_normal_context_menu(pos)
         elif self._scene_mode in (SceneMode.EDIT, SceneMode.EDIT_GROUP):
             if isinstance(self._current_component, PointComponent):
                 self._finish_create_point_component_by_mouse()
@@ -480,7 +479,7 @@ class ExtendedScene(QGraphicsView):
                 self._finish_create_rect_component_by_mouse()
 
                 if not self._mouse_moved_after_right_click:
-                    self._send_custom_context_menu_signal(pos)
+                    self._emit_context_menu_signal(pos)
 
     def _modify_component_to_add_to_scene(self, component: QGraphicsItem) -> Optional[QGraphicsItem]:
         """
@@ -619,15 +618,6 @@ class ExtendedScene(QGraphicsView):
 
         item.setSelected(True)
 
-    def _send_custom_context_menu_signal(self, pos: QPoint) -> None:
-        """
-        :param pos: mouse position.
-        """
-
-        if self.contextMenuPolicy() == Qt.CustomContextMenu:
-            self.custom_context_menu_requested.emit(pos)
-            logger.debug("Custom context menu requested")
-
     @pyqtSlot()
     def _send_scale(self) -> None:
         self.scale_changed.emit(self._scale)
@@ -701,7 +691,7 @@ class ExtendedScene(QGraphicsView):
         self._operation = ExtendedScene.Operation.SELECT_COMPONENT
 
     def _set_view_params(self) -> None:
-        self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        self.setRenderHints(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.SmoothPixmapTransform)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -710,27 +700,6 @@ class ExtendedScene(QGraphicsView):
         self.setFrameShape(QFrame.NoFrame)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
-
-    @pyqtSlot(QPoint)
-    def _show_default_context_menu(self, pos: QPoint) -> None:
-        """
-        :param pos: position in which to show the context menu.
-        """
-
-        menu_actions = []
-        if self._scene_mode is not SceneMode.NORMAL:
-            menu_actions.append(self._create_context_menu_action_to_create_pin(pos))
-        else:
-            selected_components = [item for item in self.scene().selectedItems()
-                                   if isinstance(item, BaseComponent) and item.flags() & QGraphicsItem.ItemIsMovable]
-            if selected_components:
-                menu_actions.append(self._create_context_menu_action_to_rotate_selected_components())
-
-        if menu_actions:
-            menu = QMenu()
-            for action in menu_actions:
-                menu.addAction(action)
-            menu.exec(self.mapToGlobal(pos))
 
     def _start_create_point_component_by_mouse(self, pos: QPointF) -> None:
         """
@@ -820,11 +789,29 @@ class ExtendedScene(QGraphicsView):
             except TypeError:
                 ...
 
+    def emit_normal_context_menu(self, pos: QPoint) -> None:
+        """
+        Emits a signal to display the context menu in normal mode.
+        :param pos: context menu display position.
+        """
+
+        item = self._get_clicked_item(pos)
+        if item and not self.scene().selectedItems():
+            return_unselected_state = True
+            item.setSelected(True)
+        else:
+            return_unselected_state = False
+
+        self._emit_context_menu_signal(pos)
+
+        if return_unselected_state:
+            item.setSelected(False)
+
     def enable_default_context_menu(self) -> None:
         if self.contextMenuPolicy() is not Qt.CustomContextMenu:
             self.setContextMenuPolicy(Qt.CustomContextMenu)
 
-        self.custom_context_menu_requested.connect(self._show_default_context_menu)
+        self.custom_context_menu_requested.connect(self.show_default_context_menu)
 
     def enable_shortcuts(self) -> None:
         self.disable_shortcuts()
@@ -1052,6 +1039,27 @@ class ExtendedScene(QGraphicsView):
             self._edited_components = []
 
         self._set_editable_status_for_components()
+
+    @pyqtSlot(QPoint)
+    def show_default_context_menu(self, pos: QPoint) -> None:
+        """
+        :param pos: context menu display position.
+        """
+
+        menu_actions = []
+        if self._scene_mode is not SceneMode.NORMAL:
+            menu_actions.append(self._create_context_menu_action_to_create_pin(pos))
+        else:
+            selected_components = [item for item in self.scene().selectedItems()
+                                   if isinstance(item, BaseComponent) and item.flags() & QGraphicsItem.ItemIsMovable]
+            if selected_components:
+                menu_actions.append(self._create_context_menu_action_to_rotate_selected_components())
+
+        if menu_actions:
+            menu = QMenu()
+            for action in menu_actions:
+                menu.addAction(action)
+            menu.exec(self.mapToGlobal(pos))
 
     def show_rubber_band_after_mouse_release(self) -> None:
         """
