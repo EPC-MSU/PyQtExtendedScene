@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 
 setup(name="PyQtExtendedScene",
-      version="2.0.2",
+      version="2.0.3",
       description="Extended scene library",
       url="https://github.com/EPC-MSU/PyQtExtendedScene",
       author="EPC MSU",
