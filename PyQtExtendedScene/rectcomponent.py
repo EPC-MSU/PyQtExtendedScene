@@ -1,7 +1,7 @@
 from enum import auto, Enum
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QTransform
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QTransform
 from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsRectItem, QGraphicsSceneHoverEvent, QStyle,
                              QStyleOptionGraphicsItem, QWidget)
 from . import utils as ut
@@ -68,7 +68,7 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         Y_NEAR_TOP = auto()
         Y_TOP = auto()
 
-    BORDER_REGION: float = 3
+    BORDER_REGION: float = 0
     CURSORS = {Mode.MOVE: Qt.SizeAllCursor,
                Mode.NO_ACTION: Qt.ArrowCursor,
                Mode.RESIZE_BOTTOM: Qt.SizeVerCursor,
@@ -79,7 +79,6 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
                Mode.RESIZE_RIGHT_BOTTOM: Qt.SizeFDiagCursor,
                Mode.RESIZE_RIGHT_TOP: Qt.SizeBDiagCursor,
                Mode.RESIZE_TOP: Qt.SizeVerCursor}
-    DIAGONAL_PORTION: float = 0.05
     MIN_SIZE: float = 2
     Z_VALUE: float = 1
 
@@ -144,73 +143,62 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         :return: mode.
         """
 
-        x, y = pos.x(), pos.y()
-        border_width = self.BORDER_REGION / self._scale_factor
+        scene_pos = self.mapToScene(pos)
+        x, y = scene_pos.x(), scene_pos.y()
+
         rect = self.rect()
-        left = rect.x()
-        width = rect.width()
-        right = rect.right()
-        top = rect.y()
-        height = rect.height()
-        bottom = rect.bottom()
+        scene_top_left = self.mapToScene(rect.topLeft())
+        scene_bottom_right = self.mapToScene(rect.bottomRight())
+        left = scene_top_left.x()
+        right = scene_bottom_right.x()
+        top = scene_top_left.y()
+        bottom = scene_bottom_right.y()
 
-        x_pos = None
-        if left - border_width <= x <= left:
-            x_pos = RectComponent.MousePosition.X_LEFT
-        elif left <= x <= left + self.DIAGONAL_PORTION * width:
-            x_pos = RectComponent.MousePosition.X_NEAR_LEFT
-        elif left + self.DIAGONAL_PORTION * width < x < right - self.DIAGONAL_PORTION * width:
-            x_pos = RectComponent.MousePosition.X_MIDDLE
-        elif right <= x <= right + border_width:
-            x_pos = RectComponent.MousePosition.X_RIGHT
-        elif right - self.DIAGONAL_PORTION * width <= x <= right:
-            x_pos = RectComponent.MousePosition.X_NEAR_RIGHT
+        border_width = self._get_pen_width_in_scene() / 2.0
+        on_left = abs(x - left) <= border_width
+        on_right = abs(x - right) <= border_width
+        inside_x = (left - border_width) <= x <= (right + border_width)
+        on_top = abs(y - top) <= border_width
+        on_bottom = abs(y - bottom) <= border_width
+        inside_y = (top - border_width) <= y <= (bottom + border_width)
 
-        y_pos = None
-        if top - border_width <= y <= top:
-            y_pos = RectComponent.MousePosition.Y_TOP
-        elif top <= y <= top + self.DIAGONAL_PORTION * height:
-            y_pos = RectComponent.MousePosition.Y_NEAR_TOP
-        elif top + self.DIAGONAL_PORTION * height < y < bottom - self.DIAGONAL_PORTION * height:
-            y_pos = RectComponent.MousePosition.Y_MIDDLE
-        elif bottom <= y <= bottom + border_width:
-            y_pos = RectComponent.MousePosition.Y_BOTTOM
-        elif bottom - self.DIAGONAL_PORTION * height <= y <= bottom:
-            y_pos = RectComponent.MousePosition.Y_NEAR_BOTTOM
+        if on_left and on_top:
+            return RectComponent.Mode.RESIZE_LEFT_TOP
 
-        return {(RectComponent.MousePosition.X_LEFT, RectComponent.MousePosition.Y_NEAR_TOP):
-                RectComponent.Mode.RESIZE_LEFT_TOP,
-                (RectComponent.MousePosition.X_LEFT, RectComponent.MousePosition.Y_TOP):
-                RectComponent.Mode.RESIZE_LEFT_TOP,
-                (RectComponent.MousePosition.X_NEAR_LEFT, RectComponent.MousePosition.Y_TOP):
-                RectComponent.Mode.RESIZE_LEFT_TOP,
-                (RectComponent.MousePosition.X_MIDDLE, RectComponent.MousePosition.Y_TOP):
-                RectComponent.Mode.RESIZE_TOP,
-                (RectComponent.MousePosition.X_RIGHT, RectComponent.MousePosition.Y_NEAR_TOP):
-                RectComponent.Mode.RESIZE_RIGHT_TOP,
-                (RectComponent.MousePosition.X_RIGHT, RectComponent.MousePosition.Y_TOP):
-                RectComponent.Mode.RESIZE_RIGHT_TOP,
-                (RectComponent.MousePosition.X_NEAR_RIGHT, RectComponent.MousePosition.Y_TOP):
-                RectComponent.Mode.RESIZE_RIGHT_TOP,
-                (RectComponent.MousePosition.X_RIGHT, RectComponent.MousePosition.Y_MIDDLE):
-                RectComponent.Mode.RESIZE_RIGHT,
-                (RectComponent.MousePosition.X_RIGHT, RectComponent.MousePosition.Y_NEAR_BOTTOM):
-                RectComponent.Mode.RESIZE_RIGHT_BOTTOM,
-                (RectComponent.MousePosition.X_RIGHT, RectComponent.MousePosition.Y_BOTTOM):
-                RectComponent.Mode.RESIZE_RIGHT_BOTTOM,
-                (RectComponent.MousePosition.X_NEAR_RIGHT, RectComponent.MousePosition.Y_BOTTOM):
-                RectComponent.Mode.RESIZE_RIGHT_BOTTOM,
-                (RectComponent.MousePosition.X_MIDDLE, RectComponent.MousePosition.Y_BOTTOM):
-                RectComponent.Mode.RESIZE_BOTTOM,
-                (RectComponent.MousePosition.X_LEFT, RectComponent.MousePosition.Y_NEAR_BOTTOM):
-                RectComponent.Mode.RESIZE_LEFT_BOTTOM,
-                (RectComponent.MousePosition.X_LEFT, RectComponent.MousePosition.Y_BOTTOM):
-                RectComponent.Mode.RESIZE_LEFT_BOTTOM,
-                (RectComponent.MousePosition.X_NEAR_LEFT, RectComponent.MousePosition.Y_BOTTOM):
-                RectComponent.Mode.RESIZE_LEFT_BOTTOM,
-                (RectComponent.MousePosition.X_LEFT, RectComponent.MousePosition.Y_MIDDLE):
-                RectComponent.Mode.RESIZE_LEFT,
-                }.get((x_pos, y_pos), RectComponent.Mode.NO_ACTION)
+        if on_left and on_bottom:
+            return RectComponent.Mode.RESIZE_LEFT_BOTTOM
+
+        if on_right and on_top:
+            return RectComponent.Mode.RESIZE_RIGHT_TOP
+
+        if on_right and on_bottom:
+            return RectComponent.Mode.RESIZE_RIGHT_BOTTOM
+
+        if on_left and inside_y:
+            return RectComponent.Mode.RESIZE_LEFT
+
+        if on_right and inside_y:
+            return RectComponent.Mode.RESIZE_RIGHT
+
+        if on_top and inside_x:
+            return RectComponent.Mode.RESIZE_TOP
+
+        if on_bottom and inside_x:
+            return RectComponent.Mode.RESIZE_BOTTOM
+
+        return RectComponent.Mode.NO_ACTION
+
+    def _get_pen_width_in_scene(self) -> float:
+        """
+        :return: pen width in the scene reference frame.
+        """
+
+        local_pen_width = self.pen().widthF()
+        if local_pen_width == 0:
+            local_pen_width = 1.0
+
+        scene_pen_offset = self.mapToScene(QPointF(local_pen_width, 0)) - self.mapToScene(QPointF(0, 0))
+        return abs(scene_pen_offset.x())
 
     @change_rect_and_pos
     def _resize_at_any_mode(self, pos: QPointF) -> Tuple[float, float]:
@@ -247,6 +235,21 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
 
     def _set_cursor(self) -> None:
         self.setCursor(RectComponent.CURSORS.get(self._mode, Qt.ArrowCursor))
+
+    def boundingRect(self) -> QRectF:
+        """
+        :return: expanded bounding box that incorporates both the logical item rectangle and the dynamic border/pen
+        width required for accurate hover detection and resizing. It ensures that Qt does not clip visual updates or
+        mouse events on the outer interaction zones.
+        """
+
+        local_pen_width = self.pen().widthF()
+        if local_pen_width == 0:
+            local_pen_width = 1.0
+
+        local_border_width = local_pen_width / 2
+        rect = self.rect()
+        return rect.adjusted(-local_border_width, -local_border_width, local_border_width, local_border_width)
 
     def check_big_enough(self) -> bool:
         """
@@ -335,6 +338,14 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
         self._mode = self._determine_mode(event.pos())
         self._set_cursor()
 
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """
+        :param event: hover event.
+        """
+
+        self._mode = RectComponent.Mode.NO_ACTION
+        self.unsetCursor()
+
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """
         :param event: hover event.
@@ -416,6 +427,18 @@ class RectComponent(QGraphicsRectItem, BaseComponent):
 
         self.setBrush(self._brush)
         self._update_pen_width(self._pen)
+
+    def shape(self) -> QPainterPath:
+        """
+        This method provides an extended hit-test region that perfectly matches the expanded bounding rectangle.
+        This ensures that hover and mouse move events are successfully triggered when the cursor is positioned over the
+        outer visual boundaries or the thickness of the frame's pen.
+        :return: the interactive hit-box path in local coordinates.
+        """
+
+        path = QPainterPath()
+        path.addRect(self.boundingRect())
+        return path
 
     def update_selection(self) -> None:
         if not self._editable or self._scene_mode is SceneMode.NORMAL:

@@ -169,6 +169,8 @@ class BaseComponent:
             if item_class != BaseComponent:
                 return item_class().itemChange(change, value)
 
+        return None
+
     def set_editable(self, editable: bool, pen: Optional[QPen] = None) -> None:
         """
         :param editable: if True, then the component can be edited;
@@ -222,3 +224,5 @@ class BaseComponent:
         self._scale_factor = scale_factor
         if hasattr(self, "setPen"):
             self._update_pen_width(self.pen(), self._pen_to_edit.widthF() if self._editable else self._pen.widthF())
+
+        self.prepareGeometryChange()
